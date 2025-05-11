@@ -545,6 +545,8 @@ jobs:
           * To update, simply download the new installer and run it.  
           * It is advised to update to the latest version ASAP because Chrome extensions auto-update by design.
 
+          ## ⚙ Setup
+          ![](demo/setup.gif)
 
           ## 🚀 What's new in ${{ github.ref_name }}?
           * This is a draft, this thing is supposed to be edited manually.
