@@ -43,14 +43,14 @@ class ClickHandler {
         ; Send mouse down
         Click("Down")
 
-        ; Natural hold time variation with occasional outliers (10% chance)
-        if (Random(1, 10) = 1) {
-            ; Occasional wider variation (60-140ms) for more human-like behavior
-            Sleep(Random(50, 130))
-            Log("Using outlier hold timing")
-        } else {
-            ; More typical human-like hold range (80-120ms)
-            Sleep(Random(70, 110))
+        ; Natural hold time for first click
+        switch (Random(1, 10)) {
+            case 1:
+                Sleep(Random(50, 70))
+            case 2:
+                Sleep(Random(110, 130))
+            default:
+                Sleep(Random(70, 110))
         }
 
         ; Send mouse up
@@ -64,11 +64,14 @@ class ClickHandler {
             ; Second click down
             Click("Down")
 
-            ; Natural hold time for second click (may be slightly different from first)
-            if (Random(1, 10) = 1) {
-                Sleep(Random(50, 130)) ; Occasional outlier
-            } else {
-                Sleep(Random(70, 110))
+            ; Natural hold time for second click
+            switch (Random(1, 10)) {
+                case 1:
+                    Sleep(Random(50, 70)) ; Occasional outlier
+                case 2:
+                    Sleep(Random(110, 130)) ; Occasional outlier
+                default:
+                    Sleep(Random(70, 110))
             }
 
             ; Second click up
