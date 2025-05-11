@@ -2,7 +2,7 @@
 
 ![Demo](demo/next.gif)  
 
-OmegleLike Skipper is a tool for skipping those unwanted users on Omegle-like sites.
+OmegleLike Skipper is a tool for skipping unwanted strangers on Omegle-like sites.
 
 Here's what you can do with it:
 - Use it solo to skip with the left arrow key instead of mouse clicks
