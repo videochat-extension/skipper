@@ -8,7 +8,7 @@ Here's what you can do with it:
 - Use it solo to skip with the left arrow key instead of mouse clicks
 - Hook it up with Videochat Extension to let it make the skip calls for you
 
-Works like a charm anywhere you can click with your mouse!
+Works like a charm anywhere you can skip with your mouse!
 
 # Installation
 
