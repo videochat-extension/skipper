@@ -1,0 +1,598 @@
+name: Build, Package and Prerelease OmegleLike Skipper
+
+on: 
+  push:
+    tags:
+      - '*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
+        with:
+          fetch-depth: 0
+
+      - name: Import GPG key for verification
+        shell: pwsh
+        run: |
+          $publicKey = @"
+          -----BEGIN PGP PUBLIC KEY BLOCK-----
+
+          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
+          Njyd3CxaYamee3Xj4outyMHo
+          =m7FB
+          -----END PGP PUBLIC KEY BLOCK-----
+          "@
+          
+          # Save the public key to a temporary file
+          $keyFile = "public_key.asc"
+          $publicKey | Out-File -FilePath $keyFile -Encoding ASCII
+          
+          # Import the key
+          gpg --import $keyFile
+          
+          # Verify the key was imported
+          $keyId = "99645A412509DDDC0C900826C9AF9CEF24FB578F"
+          gpg --list-keys $keyId
+          
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "::error::Failed to import required GPG key: $keyId"
+            exit 1
+          }
+          
+          Write-Host "✅ GPG key imported successfully!"
+          
+          # Clean up
+          Remove-Item $keyFile
+
+      - name: Verify commit signature
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $sha = "${{ github.sha }}"
+          Write-Host "Verifying signature for tag: $tag (commit: $sha)"
+          
+          # First check GitHub's verification
+          $apiUrl = "https://api.github.com/repos/${{ github.repository }}/commits/$sha"
+          $headers = @{
+            "Accept" = "application/vnd.github.v3+json"
+            "Authorization" = "token ${{ secrets.GITHUB_TOKEN }}"
+          }
+          
+          $response = Invoke-RestMethod -Uri $apiUrl -Headers $headers
+          $verified = $response.commit.verification.verified
+          $signature = $response.commit.verification.signature
+          
+          if (-not $verified) {
+            Write-Host "::error::Commit verification failed! This commit is not marked as verified by GitHub."
+            Write-Host "Verification status: $($response.commit.verification.reason)"
+            exit 1
+          }
+          Write-Host "✅ GitHub verified the commit signature"
+          
+          # Then verify with Git
+          git verify-commit $sha
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "::error::Git commit verification failed! This commit is not GPG-signed or the signature is invalid."
+            exit 1
+          }
+          
+          # Get the key ID from the signature
+          $sigInfo = git log --show-signature -1 $sha
+          $requiredKeyId = "99645A412509DDDC0C900826C9AF9CEF24FB578F"
+          $shortKeyId = $requiredKeyId.Substring($requiredKeyId.Length - 16)
+          
+          if ($sigInfo -match $requiredKeyId -or $sigInfo -match $shortKeyId) {
+            Write-Host "✅ Commit verified successfully with required key ID: $requiredKeyId"
+          } else {
+            Write-Host "::error::Commit is verified but not with the required key ID."
+            Write-Host "Required: $requiredKeyId"
+            Write-Host "Signature doesn't contain the required key ID."
+            exit 1
+          }
+
+      - name: Verify tag signature
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          Write-Host "Verifying signature for tag: $tag"
+          
+          # First check GitHub's verification
+          $apiUrl = "https://api.github.com/repos/${{ github.repository }}/git/refs/tags/$tag"
+          $headers = @{
+            "Accept" = "application/vnd.github.v3+json"
+            "Authorization" = "token ${{ secrets.GITHUB_TOKEN }}"
+          }
+          
+          $tagRef = Invoke-RestMethod -Uri $apiUrl -Headers $headers
+          $tagSha = $tagRef.object.sha
+          
+          # Get the tag object details which contains verification info
+          $tagUrl = "https://api.github.com/repos/${{ github.repository }}/git/tags/$tagSha"
+          $tagDetails = Invoke-RestMethod -Uri $tagUrl -Headers $headers
+          
+          # Check if the tag is verified by GitHub
+          $verified = $tagDetails.verification.verified
+          $signature = $tagDetails.verification.signature
+          
+          if (-not $verified) {
+            Write-Host "::error::Tag verification failed! This tag is not marked as verified by GitHub."
+            Write-Host "Verification status: $($tagDetails.verification.reason)"
+            exit 1
+          }
+          Write-Host "✅ GitHub verified the tag signature"
+          
+          # Then verify with Git
+          # First get the tag object
+          $tagObject = git cat-file -p $tagSha
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "::error::Failed to get tag object"
+            exit 1
+          }
+          
+          # Extract the commit hash from the tag object
+          $commitHash = ($tagObject | Select-String -Pattern "object ([a-f0-9]+)").Matches.Groups[1].Value
+          
+          # Verify the commit that the tag points to
+          git verify-commit $commitHash
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "::error::Git tag verification failed! The commit this tag points to is not GPG-signed or the signature is invalid."
+            exit 1
+          }
+          
+          # Get the key ID from the signature
+          $sigInfo = git log --show-signature -1 $commitHash
+          $requiredKeyId = "99645A412509DDDC0C900826C9AF9CEF24FB578F"
+          $shortKeyId = $requiredKeyId.Substring($requiredKeyId.Length - 16)
+          
+          if ($sigInfo -match $requiredKeyId -or $sigInfo -match $shortKeyId) {
+            Write-Host "✅ Tag verified successfully with required key ID: $requiredKeyId"
+          } else {
+            Write-Host "::error::Tag is verified but not with the required key ID."
+            Write-Host "Required: $requiredKeyId"
+            Write-Host "Signature doesn't contain the required key ID."
+            exit 1
+          }
+
+      - name: Install AutoHotkey
+        shell: pwsh
+        run: |
+          $wd = (Get-Item .).FullName
+          # Download AHK main program
+          # Previously used dynamic approach to get latest version:
+          # Invoke-WebRequest (Invoke-RestMethod https://api.github.com/repos/AutoHotkey/AutoHotkey/releases/latest).assets[0].browser_download_url -OutFile "$wd\autohotkey.zip";
+          Invoke-WebRequest "https://github.com/AutoHotkey/AutoHotkey/releases/download/v2.0.19/AutoHotkey_2.0.19.zip" -OutFile "$wd\autohotkey.zip";
+          
+          # Download AHK2Exe
+          # Previously used dynamic approach to get latest version:
+          # $response = Invoke-RestMethod "https://api.github.com/repos/AutoHotkey/Ahk2Exe/releases/latest"
+          # foreach ($asset in $response.assets) {
+          #   $url = $asset.browser_download_url
+          # }
+          Invoke-WebRequest "https://github.com/AutoHotkey/Ahk2Exe/releases/download/Ahk2Exe1.1.37.02a0a/Ahk2Exe1.1.37.02a0.zip" -OutFile "$wd\autohotkey2exe.zip";
+          # Extract files
+          Expand-Archive -Path "$wd\autohotkey.zip" -DestinationPath "$wd\autoHotkey\" -Force;
+          Expand-Archive -Path "$wd\autohotkey2exe.zip" -DestinationPath "$wd\autoHotkey\Compiler" -Force;
+          Remove-Item -Path "$wd\autohotkey.zip" -Force
+          Remove-Item -Path "$wd\autohotkey2exe.zip" -Force
+          Write-Output ("$wd\autohotkey\;" + "$wd\autohotkey\Compiler") | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          Write-Output ("BaseFile=$wd\autohotkey\AutoHotkey32.exe") | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append
+
+      - name: Run AHK2Exe
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}" -replace "^v", ""
+          # Set version as environment variable
+          $env:CI_VERSION = $version
+          Write-Host "Setting CI_VERSION environment variable to: $version"
+          
+          $command = 'ahk2exe.exe /silent verbose '
+          $command += '/in "skipper.ahk" '
+          $command += '/out "skipper.exe" '
+          $command += '/base "$Env:BaseFile" '
+          $command += '/icon "icon.ico" '
+          $command += "| Write-Output"
+          Invoke-Expression $command
+          echo $command
+          
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          $innoUrl = "https://files.jrsoftware.org/is/6/innosetup-6.4.3.exe"
+          Invoke-WebRequest -Uri $innoUrl -OutFile ".\innosetup.exe"
+          Start-Process -FilePath ".\innosetup.exe" -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART" -Wait
+          echo "C:\Program Files (x86)\Inno Setup 6" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          
+      - name: Create Inno Setup Script
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}" -replace "^v", ""
+          $content = @"
+          #define MyAppName "OmegleLike Skipper"
+          #define MyAppVersion "$version"
+          #define MyAppPublisher "omeglelike.com"
+          #define MyAppURL "https://skipper.omeglelike.com"
+          #define MyAppExeName "skipper.exe"
+
+          [Setup]
+          AppId={{com.omeglelike.skipper}}
+          AppName={#MyAppName}
+          AppVersion={#MyAppVersion}
+          AppVerName={#MyAppName} {#MyAppVersion}
+          AppPublisher={#MyAppPublisher}
+          AppPublisherURL={#MyAppURL}
+          AppSupportURL={#MyAppURL}
+          AppUpdatesURL={#MyAppURL}
+          DefaultDirName={userappdata}\{#MyAppName}
+          DefaultGroupName={#MyAppName}
+          LicenseFile=license.txt
+          OutputDir=.
+          OutputBaseFilename=omeglelike-skipper-setup-v{#MyAppVersion}
+          Compression=lzma2
+          SolidCompression=no
+          WizardStyle=modern
+          AppMutex=OmegleLikeSkipperMutex
+          CloseApplications=yes
+          RestartApplications=no
+          UninstallDisplayIcon={app}\{#MyAppExeName}
+          SetupIconFile=icon.ico
+          VersionInfoVersion={#MyAppVersion}
+          VersionInfoCompany={#MyAppPublisher}
+          VersionInfoCopyright={#MyAppPublisher}
+          VersionInfoProductName={#MyAppName}
+          VersionInfoProductVersion={#MyAppVersion}
+          PrivilegesRequired=lowest
+          DirExistsWarning=no
+          UsePreviousAppDir=yes
+          UsePreviousGroup=yes
+          DisableDirPage=yes
+          DisableProgramGroupPage=yes
+          ShowLanguageDialog=auto
+          DisableWelcomePage=no
+
+          [Languages]
+          Name: "english"; MessagesFile: "compiler:Default.isl"
+          Name: "arabic"; MessagesFile: "compiler:Languages\Arabic.isl"
+          Name: "armenian"; MessagesFile: "compiler:Languages\Armenian.isl"
+          Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
+          Name: "bulgarian"; MessagesFile: "compiler:Languages\Bulgarian.isl"
+          Name: "catalan"; MessagesFile: "compiler:Languages\Catalan.isl"
+          Name: "corsican"; MessagesFile: "compiler:Languages\Corsican.isl"
+          Name: "czech"; MessagesFile: "compiler:Languages\Czech.isl"
+          Name: "danish"; MessagesFile: "compiler:Languages\Danish.isl"
+          Name: "dutch"; MessagesFile: "compiler:Languages\Dutch.isl"
+          Name: "finnish"; MessagesFile: "compiler:Languages\Finnish.isl"
+          Name: "french"; MessagesFile: "compiler:Languages\French.isl"
+          Name: "german"; MessagesFile: "compiler:Languages\German.isl"
+          Name: "hebrew"; MessagesFile: "compiler:Languages\Hebrew.isl"
+          Name: "hungarian"; MessagesFile: "compiler:Languages\Hungarian.isl"
+          Name: "icelandic"; MessagesFile: "compiler:Languages\Icelandic.isl"
+          Name: "italian"; MessagesFile: "compiler:Languages\Italian.isl"
+          Name: "japanese"; MessagesFile: "compiler:Languages\Japanese.isl"
+          Name: "korean"; MessagesFile: "compiler:Languages\Korean.isl"
+          Name: "norwegian"; MessagesFile: "compiler:Languages\Norwegian.isl"
+          Name: "polish"; MessagesFile: "compiler:Languages\Polish.isl"
+          Name: "portuguese"; MessagesFile: "compiler:Languages\Portuguese.isl"
+          Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
+          Name: "slovak"; MessagesFile: "compiler:Languages\Slovak.isl"
+          Name: "slovenian"; MessagesFile: "compiler:Languages\Slovenian.isl"
+          Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
+          Name: "swedish"; MessagesFile: "compiler:Languages\Swedish.isl"
+          Name: "tamil"; MessagesFile: "compiler:Languages\Tamil.isl"
+          Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
+          Name: "ukrainian"; MessagesFile: "compiler:Languages\Ukrainian.isl"
+
+          [Files]
+          Source: "skipper.exe"; DestDir: "{app}"; Flags: ignoreversion
+          ; Add additional files or dirs as needed
+
+          [Icons]
+          Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+          Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+          Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
+          [Run]
+          Filename: "{app}\{#MyAppExeName}"; Description: "Launch OmegleLike Skipper";  Parameters: "--from-setup"; Flags: shellexec runasoriginaluser postinstall skipifsilent
+
+          [UninstallDelete]
+          Type: filesandordirs; Name: "{app}"
+
+          [UninstallRun]
+          Filename: "{cmd}"; Parameters: "/C reg delete ""HKEY_CURRENT_USER\SOFTWARE\Google\Chrome\NativeMessagingHosts\com.omeglelike.skipper"" /f"; Flags: runhidden
+
+          [Code]
+          procedure InitializeWizard;
+          var
+            RichViewer: TRichEditViewer;
+          begin
+            WizardForm.WelcomeLabel2.Visible := False;
+            
+            RichViewer := TRichEditViewer.Create(WizardForm);
+            RichViewer.Parent := WizardForm.WelcomePage;
+            RichViewer.Left := WizardForm.WelcomeLabel2.Left;
+            RichViewer.Top := WizardForm.WelcomeLabel2.Top;
+            RichViewer.Width := WizardForm.WelcomeLabel2.Width;
+            RichViewer.Height := ScaleY(280);
+            RichViewer.ReadOnly := True;
+            RichViewer.BorderStyle := bsNone;
+            RichViewer.Color := WizardForm.WelcomePage.Color;
+            RichViewer.UseRichEdit := True;
+            RichViewer.RTFText := '{\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}}\viewkind4\uc1\pard\f0\fs18 Thank you for choosing {#MyAppName}!\par\par OmegleLike Skipper is a tool that helps you automate skipping unwanted conversations on omegle-like websites.\par\par It can work autonomously (skip using arrow keys) or as a companion for {\field{\*\fldinst{HYPERLINK "https://vext.omeglelike.com"}}{\fldrslt{Videochat Extension}}}.\par\par Source Available (not open source) on {\field{\*\fldinst{HYPERLINK "https://github.com/videochat-extension/skipper"}}{\fldrslt{Github}}}.\par\par Learn more at https://skipper.omeglelike.com\par\par Backup link: https://pastebin.com/embed_iframe/sfG3zvRT\par\par This wizard will guide you through the installation process.\par}';
+          end;
+
+          procedure CurPageChanged(CurPageID: Integer);
+          begin
+            if CurPageID = wpFinished then
+            begin
+              // Disable all checkboxes in the RunList (in case you have more than one)
+              WizardForm.RunList.Enabled := False;
+            end;
+          end;
+
+          function InitializeSetup(): Boolean;
+          var
+            ResultCode: Integer;
+          begin
+            Result := True;
+            
+            // Check if app is running and close it
+            if CheckForMutexes('OmegleLikeSkipperMutex') then begin
+              if MsgBox('The application is currently running. Do you want to close it for the installation?', 
+                     mbConfirmation, MB_YESNO) = IDNO then begin
+                Result := False;
+                Exit;
+              end;
+              
+              // Try to terminate the process
+              Exec('taskkill.exe', '/f /im skipper.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+              Sleep(1500); // Give it time to close
+            end;
+            
+            Result := True;
+          end;
+
+          function GetUninstallString(): String;
+          var
+            sUnInstPath: String;
+            sUnInstallString: String;
+          begin
+            sUnInstPath := ExpandConstant('Software\Microsoft\Windows\CurrentVersion\Uninstall\{#emit SetupSetting("AppId")}_is1');
+            sUnInstallString := '';
+            if not RegQueryStringValue(HKLM, sUnInstPath, 'UninstallString', sUnInstallString) then
+              RegQueryStringValue(HKCU, sUnInstPath, 'UninstallString', sUnInstallString);
+            Result := sUnInstallString;
+          end;
+          "@
+          
+          Set-Content -Path "installer.iss" -Value $content
+          
+          # Create a dummy license file if it doesn't exist
+          if (-not (Test-Path "license.txt")) {
+            $licenseContent = @"
+          End-User License Agreement (EULA)
+          
+          Please read this agreement carefully before installing or using this software.
+          
+          By installing or using the software, you agree to be bound by the terms of this license.
+
+          By reading past this point, you explicitly consent to and are legally bound to:
+          1. Pet at least one animal per day.
+          2. Use your saved mouse clicks for something productive.
+          3. Tell at least one stranger about a public directory of Omegle-like websites: https://omeglelike.com.
+
+          0. EARLY RELEASE WARNING
+          This is a very early release of the software. You are using it at your own risk. The software may contain bugs, errors, or other issues.
+          
+          1. Source Available, not Open Source
+          OmegleLike Skipper is NOT an open source project. Please dont try to fork it or use it in any way other than intended.
+          However, for transparency reasons, its source code is available for viewing at: https://github.com/videochat-extension/skipper
+          
+          This specific build was created from commit: ${{ github.sha }}
+          View the exact source code used for this build: https://github.com/${{ github.repository }}/tree/${{ github.sha }}
+          View the build workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+          P.S. build workflows have 400 days retention, this was compiled on $(Get-Date -Format "yyyy-MM-dd HH:mm:ss UTC")
+
+          2. GRANT OF LICENSE
+          This application is licensed to you, not sold. This license grants you a non-exclusive, non-transferable right to use the software for personal purposes only. You may not:
+          - Redistribute, resell, or transfer the software
+          - Modify, reverse engineer, or create derivative works
+          - Remove or alter any proprietary notices or labels
+          - Use the software for any illegal purposes
+
+          3. THIRD-PARTY SOFTWARE
+          This application contains AutoHotkey v2, which is licensed under the GNU General Public License v2.
+          You can find the full text of this license at: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+          
+          The source code for AutoHotkey is available at: https://github.com/AutoHotkey/AutoHotkey
+          
+          4. COPYRIGHT
+          All rights reserved.
+
+          5. NO WARRANTIES
+          THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+          "@
+            Set-Content -Path "license.txt" -Value $licenseContent
+          }
+          
+      - name: Build Installer
+        shell: pwsh
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
+
+      - name: Set up GPG for signing
+        uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_SETUP_KEY }}
+          passphrase: ${{ secrets.GPG_SETUP_PASSPHRASE }}
+
+      - name: Sign release files
+        run: |
+          gpg --detach-sign -a "omeglelike-skipper-setup-v*.exe"
+
+      - name: Scan with VirusTotal
+        id: virustotal
+        uses: crazy-max/ghaction-virustotal@d34968c958ae283fe976efed637081b9f9dcf74f
+        with:
+          vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
+          files: |
+            omeglelike-skipper-setup-v*.exe
+
+      - name: Generate release notes with checksums and file links
+        shell: pwsh
+        run: |
+          $checksums = (Get-FileHash -Algorithm SHA256 "omeglelike-skipper-setup-v*" | ForEach-Object {
+            "> $($_.Hash)  $($_.Path.Split('\')[-1])"
+          }) -join "`n"
+          
+          # Get VirusTotal URLs from output
+          $vtResults = "${{ steps.virustotal.outputs.analysis }}"
+          $vtLinks = ""
+          
+          if ($vtResults -and $vtResults.Contains("=")) {
+            Write-Host "Processing VirusTotal results..."
+            
+            # Extract filename and URL directly
+            $equalsIndex = $vtResults.IndexOf("=")
+            $filename = $vtResults.Substring(0, $equalsIndex).Trim()
+            $url = $vtResults.Substring($equalsIndex + 1).Trim()
+            
+            Write-Host "Extracted - Filename: $filename, URL: $url"
+            
+            # Add the VirusTotal section to release notes
+            $vtLinks = @"
+          
+          ## 🛡️ VirusTotal Analysis
+          > _Some AV products might flag Skipper as suspicious, this is normal and expected._
+          > _[AutoHotkey](https://www.autohotkey.com/) is a legitimate open source automation tool which often gets false positives._
+          > _Skipper is just a packaged AutoHotkey script, AHK has been around since 2003..._
+          > _Check the results from security vendors you trust._
+          * <a href="$url" target="_blank">$filename</a>
+          "@
+            Write-Host "VirusTotal link added to release notes."
+          } else {
+            Write-Host "No valid VirusTotal results available."
+          }
+          
+          $releaseNotes = @"
+          # OmegleLike Skipper ${{ github.ref_name }}
+
+          > [!NOTE]
+          > OmegleLike Skipper helps you skip unwanted conversations on [Omegle-like websites](https://omeglelike.com).
+          > It can be used autonomously (using arrow keys) or in pair with [Videochat Extension](https://vext.omeglelike.com).
+
+
+          ## ✨ Installation Instructions
+          > [!IMPORTANT]
+          > - **Download the installer using [THIS LINK](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/omeglelike-skipper-setup-${{ github.ref_name }}.exe) or get it from the release assets below**
+          > - **Run the installer and follow the on-screen instructions**
+          > - **After installation, Skipper will launch and you will be able to configure where to click to skip**
+          > - **If you're using [Videochat Extension](https://vext.omeglelike.com), enable the integration (it will show you how)**
+
+          ## 🔄 Update instructions
+          * Skipper does not include an auto-update mechanism for security reasons.  
+          * It checks for updates on startup using the [public GitHub API](https://api.github.com/repos/videochat-extension/skipper/releases/latest) and notifies you of new releases.
+          * To update, simply download the new installer and run it.  
+          * It is advised to update to the latest version ASAP because Chrome extensions auto-update by design.
+
+
+          ## 🚀 What's new in ${{ github.ref_name }}?
+          * This is a draft, this thing is supposed to be edited manually.
+
+          ## 🔧 Build & Privacy Information
+
+          > **OmegleLike Skipper is not Open Source, but its source code is available for transparency reasons.**
+          > 
+          > This software is built on Microsoft servers from the publicly available repository using GitHub Action.
+          It downloads AutoHotkey, packages Skipper into an EXE using AHK2Exe, and creates an installer using Inno Setup.
+          No data is ever collected, installation/uninstallation is streamlined, no admin rights required.
+          Internet is only used on startup to check for new release using the [public GitHub API](https://api.github.com/repos/videochat-extension/skipper/releases/latest).  
+          > 
+          > You can verify the build process yourself:
+          > | Resource | Link |
+          > |----------|------|
+          > | **Source code** | [View the code for this build](https://github.com/${{ github.repository }}/tree/${{ github.sha }}) |
+          > | **Built from commit** | [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }}) |
+          > | **Build workflow** | [View this build process](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) |
+          > | **Built at** | $(Get-Date -Format "yyyy-MM-dd HH:mm:ss UTC") |
+          > <details><summary>Click to show SHA256 checksums</summary>  
+          > 
+          >
+          > ``````
+          $checksums
+          > ``````
+          >
+          > </details>
+
+          $vtLinks
+          "@
+          $releaseNotes | Out-File "release-notes.md"
+
+      - name: Upload to GitHub Release
+        id: release
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
+        with:
+          files: |
+            omeglelike-skipper-setup-v*.exe
+            omeglelike-skipper-setup-v*.exe.asc
+          body_path: release-notes.md
+          prerelease: true
+
+      - name: Log file hash sums
+        shell: pwsh
+        run: |
+          # Log hash sums for uploaded files
+          Get-FileHash -Algorithm SHA256 "omeglelike-skipper-setup-v*" | ForEach-Object {
+            Write-Host "File: $($_.Path.Split('\')[-1])"
+            Write-Host "SHA256: $($_.Hash)"
+          }
