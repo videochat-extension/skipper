@@ -22,7 +22,7 @@ We all know the struggle of dealing with unwanted users on Omegle clones. Back i
 - Location filtering
 - Blacklisting
 
-But after getting burned three times with the site-specific approach, we decided to focus on building a universal WebRTC monitoring tool instead.
+But after getting burned thrice with the site-specific approach, we decided to focus on building a universal WebRTC monitoring tool instead.
 
 A lot of people kept asking for the automation to come back, so here we are!
 
