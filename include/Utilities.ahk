@@ -35,31 +35,49 @@ CheckForUpdates(silent := true)
         versionRegex := '"tag_name":\s*"v?([\d\.]+)"'
         if RegExMatch(response, versionRegex, &vMatch)
             latestVersion := vMatch[1]
-
         if IsNewerVersion(latestVersion, AppVersion) {
             ; First try to find any .exe file in assets
             browserDownloadUrlRegex := '"browser_download_url":\s*"([^"]+\.exe)"'
             if RegExMatch(response, browserDownloadUrlRegex, &dMatch)
                 downloadUrl := dMatch[1]
 
+            ; Get the release page URL regardless of whether we have a download URL
+            releaseUrlRegex := '"html_url":\s*"([^"]+)"'
+            releaseUrl := ""
+            if RegExMatch(response, releaseUrlRegex, &rMatch)
+                releaseUrl := rMatch[1]
+
             ; If no downloadable assets, offer to go to the release page
             if (downloadUrl = "") {
-                releaseUrlRegex := '"html_url":\s*"([^"]+)"'
-                releaseUrl := ""
-                if RegExMatch(response, releaseUrlRegex, &rMatch)
-                    releaseUrl := rMatch[1]
-
-                if releaseUrl && MsgBox("A new version (" latestVersion ") is available!`n`nCurrent version: " AppVersion "`n`nWould you like to visit the release page?", "Update Available", "YesNo") = "Yes"
-                {
+                try {
+                    result := ShowUpdateWithLink("A new version (" latestVersion ") is available!`n`nCurrent version: " AppVersion "`n`nWould you like to visit the release page?", 
+                        releaseUrl, "Click here to view the release page")
+                } catch Error as e {
+                    ; Fallback to standard MsgBox if custom dialog fails
+                    Log("Error showing update dialog: " e.Message)
+                    result := MsgBox("A new version (" latestVersion ") is available!`n`nCurrent version: " AppVersion "`n`nWould you like to visit the release page?`n`nRelease page: " releaseUrl, "Update Available", "YesNo")
+                }
+                
+                if (releaseUrl && result = "Yes") {
                     Run "explorer.exe " releaseUrl
                     MsgBox("The release page has been opened in your browser.`n`nPlease download and install the update for " AppName ".", "Download Update")
                     return
                 }
             }
-            else if MsgBox("A new version (" latestVersion ") is available!`n`nCurrent version: " AppVersion "`n`nWould you like to download and install the update?", "Update Available", "YesNo") = "Yes"
-            {
-                Run "explorer.exe " downloadUrl
-                MsgBox("The installer has been opened in your browser.`n`nPlease download and run it to update " AppName ".", "Downloading Update")
+            else {
+                try {
+                    result := ShowUpdateWithLink("A new version (" latestVersion ") is available!`n`nCurrent version: " AppVersion "`n`nWould you like to download and install the update?", 
+                        releaseUrl, "Click here to view the release page")
+                } catch Error as e {
+                    ; Fallback to standard MsgBox if custom dialog fails
+                    Log("Error showing update dialog: " e.Message)
+                    result := MsgBox("A new version (" latestVersion ") is available!`n`nCurrent version: " AppVersion "`n`nWould you like to download and install the update?`n`nRelease page: " releaseUrl, "Update Available", "YesNo")
+                }
+                
+                if (result = "Yes") {
+                    Run "explorer.exe " downloadUrl
+                    MsgBox("The installer has been opened in your browser.`n`nPlease download and run it to update " AppName ".", "Downloading Update")
+                }
             }
         }
         else if (!silent) {
@@ -187,6 +205,76 @@ ShowErrorWithLink(message, linkUrl, linkText) {
 
     ; Wait for a result
     WinWaitClose(errorGui.Hwnd)
+
+    return result
+}
+
+; Custom dialog function with clickable link for updates
+ShowUpdateWithLink(message, linkUrl, linkText) {
+    ; Dialog width
+    dialogWidth := 360
+
+    ; Create a custom GUI dialog
+    updateGui := Gui("+AlwaysOnTop -MinimizeBox", "OmegleLike Skipper - Update Available")
+    updateGui.SetFont("s10", "Segoe UI")
+    updateGui.MarginX := 20
+    updateGui.MarginY := 20
+
+    ; Add message with auto-wrapping
+    messageText := updateGui.Add("Text", "w320 Wrap", message)
+
+    ; Get text dimensions to calculate optimal window height
+    messageText.GetPos(&textX, &textY, &textWidth, &textHeight)
+
+    ; Add clickable link without focus
+    linkCtrl := updateGui.Add("Link", "w320 y+15 -Tabstop", '<a href="' linkUrl '">' linkText '</a>')
+    linkCtrl.GetPos(&linkX, &linkY, &linkWidth, &linkHeight)
+    
+    ; Add backup link for emergency cases
+    backupLinkCtrl := updateGui.Add("Link", "w320 y+10 -Tabstop", '<a href="https://pastebin.com/embed_iframe/sfG3zvRT">If something is VERY wrong, check this link.</a>')
+    backupLinkCtrl.GetPos(&backupLinkX, &backupLinkY, &backupLinkWidth, &backupLinkHeight)
+
+    ; Calculate button position - ensure they're below the text with proper spacing
+    buttonY := backupLinkY + backupLinkHeight + 20
+
+    ; Define button dimensions
+    buttonWidth := 100
+    buttonSpacing := 20
+    totalButtonsWidth := (2 * buttonWidth) + buttonSpacing
+
+    ; Calculate left position for the first button to center both buttons
+    firstButtonX := (dialogWidth - totalButtonsWidth) / 2
+
+    ; Add Yes/No buttons centered horizontally
+    yesBtn := updateGui.Add("Button", "Default x" firstButtonX " y" buttonY " w" buttonWidth, "&Yes")
+    noBtn := updateGui.Add("Button", "x+" buttonSpacing " y" buttonY " w" buttonWidth, "&No")
+
+    ; Calculate optimal window height based on content
+    ; Min height of 180 pixels, but can grow with content
+    optimalHeight := buttonY + 50  ; Extra space for the buttons and bottom margin
+    windowHeight := Max(200, optimalHeight)
+
+    ; Initialize result
+    result := ""
+
+    ; Set up button events
+    yesBtn.OnEvent("Click", (*) => (result := "Yes", updateGui.Destroy()))
+    noBtn.OnEvent("Click", (*) => (result := "No", updateGui.Destroy()))
+    updateGui.OnEvent("Close", (*) => (result := "No", updateGui.Destroy()))
+
+    ; Add event for clickable link - open in browser when clicked
+    linkCtrl.OnEvent("Click", (*) => Run("explorer.exe " linkUrl))
+    backupLinkCtrl.OnEvent("Click", (*) => Run("explorer.exe https://pastebin.com/embed_iframe/sfG3zvRT"))
+
+    ; Show dialog with dynamically calculated height and centered on screen
+    updateGui.Show("w" dialogWidth " h" windowHeight " Center")
+
+    ; Focus on Yes button
+    WinActivate("ahk_id " updateGui.Hwnd)
+    ControlFocus(yesBtn.Hwnd, "ahk_id " updateGui.Hwnd)
+
+    ; Wait for a result
+    WinWaitClose(updateGui.Hwnd)
 
     return result
 }
