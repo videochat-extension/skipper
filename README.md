@@ -51,4 +51,5 @@ In the end, we ended up with a simple clicker...
 # License
 
 This isn't open source, but we're keeping the code visible for transparency.  
+For more details, check out the [releases page](https://github.com/videochat-extension/skipper/releases).
 Check out the full license in the installer - the build workflow has the latest version.
