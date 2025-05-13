@@ -177,6 +177,7 @@ class MessagingHostGUI {
         this.TabsControl.UseTab(2)
 
         this.LogEdit := this.MainGui.Add("Edit", "x15 y45 w450 h455 +Multi +ReadOnly +VScroll +WantReturn", "")
+        this.LogEdit.Value := "Logging is temporarily disabled"
 
         ; ================ ABOUT & FEEDBACK TAB ================
         this.TabsControl.UseTab(3)
@@ -456,7 +457,8 @@ class MessagingHostGUI {
     ; Update the log display
     UpdateLog(text) {
         ; Skip empty messages
-        if (text = "")
+        ; disable logging for now
+        if (true || text = "")
             return
 
         ; Add timestamp to log entry
