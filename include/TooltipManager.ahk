@@ -51,7 +51,6 @@ class TooltipManager {
         this.tooltipGui.BackColor := bgColor
         this.tooltipGui.SetFont("s10 c" . textColor, "Segoe UI")
         this.tooltipGui.Add("Text", "Background" . bgColor, text)
-        this.tooltipGui.Opt("AlwaysOnTop")
         WinSetTransparent(transparency, this.tooltipGui)
         this.tooltipGui.Show("AutoSize x" . x . " y" . y . " NoActivate")
         this.tooltipVisible := true
