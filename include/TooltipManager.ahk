@@ -5,11 +5,14 @@ class TooltipManager {
     static tooltipGui := ""          ; The actual GUI object
     static tooltipVisible := false    ; Whether tooltip is currently visible
     static showTooltipHints := true   ; Controls whether tooltips are enabled
-    static currentTimer := 0          ; Timer ID for the current tooltip
+    static clearFn := ""             ; Stored function reference for tooltip clearing
+    static activeTimer := false      ; Flag indicating if a timer is currently active
 
     ; Initialize the tooltip system
     static Initialize(showHints := true) {
         this.showTooltipHints := showHints
+        ; Create a persistent function reference for the timer
+        this.clearFn := ObjBindMethod(this, "ClearTooltip")
         Logger.Info("TooltipManager initialized. Hints enabled: " . this.showTooltipHints)
     }
 
@@ -36,14 +39,16 @@ class TooltipManager {
             y := (y = "") ? mouseY + 20 : y
         }
 
-        ; Stop existing hide timer if one exists
-        if (this.currentTimer) {
-            SetTimer(this.currentTimer, 0)
-            this.currentTimer := 0
+        ; Cancel any existing timer
+        if (this.activeTimer) {
+            SetTimer(this.clearFn, 0)
+            this.activeTimer := false
         }
 
+        ; Destroy any existing tooltip GUI to prevent multiple tooltips
         if (this.tooltipGui) {
             this.tooltipGui.Destroy()
+            this.tooltipGui := ""
         }
         
         ; Create new tooltip GUI
@@ -55,26 +60,25 @@ class TooltipManager {
         this.tooltipGui.Show("AutoSize x" . x . " y" . y . " NoActivate")
         this.tooltipVisible := true
 
-        ; Create a new timer to hide the tooltip after specified timeout
-        hideFn := ObjBindMethod(this, "HideTooltip")
-        SetTimer(hideFn, -timeout)
-        this.currentTimer := hideFn
+        ; Set a new timer to clear the tooltip after specified timeout
+        ; Use a longer minimum timeout to prevent immediate disappearance
+        if (timeout < 500)
+            timeout := 500
+            
+        SetTimer(this.clearFn, -timeout)
+        this.activeTimer := true
     }
 
-    ; Hide the tooltip
-    static HideTooltip() {
-        if (this.tooltipGui && this.tooltipVisible) {
-            this.tooltipGui.Hide()
+    ; Clear the tooltip
+    static ClearTooltip() {
+        if (this.tooltipGui) {
+            this.tooltipGui.Destroy()
+            this.tooltipGui := ""
             this.tooltipVisible := false
         }
         
-        ; Clear timer reference
-        this.currentTimer := 0
-    }
-
-    ; Clear tooltip (alias for HideTooltip for backward compatibility)
-    static ClearTooltip() {
-        this.HideTooltip()
+        ; Mark timer as inactive
+        this.activeTimer := false
     }
 
     ; For compatibility with old code that used ClearTooltips (plural)
