@@ -45,11 +45,11 @@ class Settings {
             FileDelete(testFile)
 
             this.iniPath := scriptDirPath
-            Log("Settings: Using script directory for settings: " . this.iniPath)
+            Logger.Info("Settings: Using script directory for settings: " . this.iniPath)
             return
         }
         catch {
-            Log("Settings: Cannot write to script directory, falling back to local app data")
+            Logger.Info("Settings: Cannot write to script directory, falling back to local app data")
         }
 
         ; Fallback to local app data folder
@@ -60,7 +60,7 @@ class Settings {
         if !DirExist(settingsDir)
             DirCreate(settingsDir)
 
-        Log("Settings: Using local app data for settings: " . this.iniPath)
+        Logger.Info("Settings: Using local app data for settings: " . this.iniPath)
     }
 
     ; Load settings from INI file or use defaults
@@ -70,19 +70,19 @@ class Settings {
 
         ; Try to read from INI file
         if !FileExist(this.iniPath) {
-            Log("Settings: No settings file found, creating with defaults")
+            Logger.Info("Settings: No settings file found, creating with defaults")
             ; Save defaults to create initial file
             this.SaveSettings()
             this.isInitialized := true
             return
         }
 
-        Log("Settings: Found INI file: " . this.iniPath)
+        Logger.Info("Settings: Found INI file: " . this.iniPath)
 
         ; Check if file is readable and valid
         try {
             ; Load all settings safely (with validation)
-            Log("Settings: Loading values from INI file...")
+            Logger.Info("Settings: Loading values from INI file...")
 
             ; Skip region settings
             this._LoadIntValue("skipRegionLeft", "Regions", "SkipLeft", 0, 10000)
@@ -108,10 +108,10 @@ class Settings {
             ; Emergency shutdown setting
             this._LoadBoolValue("isEmergencyShutdownEnabled", "Features", "EmergencyShutdown")
 
-            Log("Settings: Successfully loaded all settings from INI")
+            Logger.Info("Settings: Successfully loaded all settings from INI")
         }
         catch as err {
-            Log("Settings: Error loading settings, using defaults and rebuilding file: " . err.Message)
+            Logger.Error("Settings: Error loading settings, using defaults and rebuilding file: " . err.Message)
             this.ResetToDefaults()
 
             ; Try to back up the corrupted file
@@ -119,10 +119,10 @@ class Settings {
                 if FileExist(this.iniPath) {
                     backupPath := this.iniPath . ".bak"
                     FileCopy(this.iniPath, backupPath, true)
-                    Log("Settings: Backed up corrupted file to " . backupPath)
+                    Logger.Info("Settings: Backed up corrupted file to " . backupPath)
                 }
             } catch as backupErr {
-                Log("Settings: Could not back up corrupted file: " . backupErr.Message)
+                Logger.Info("Settings: Could not back up corrupted file: " . backupErr.Message)
             }
 
             ; Create a new clean file
@@ -135,7 +135,7 @@ class Settings {
     ; Reset all settings to default values
     ResetToDefaults() {
         this.values := Settings.Defaults.Clone()
-        Log("Settings: Reset to defaults")
+        Logger.Info("Settings: Reset to defaults")
     }
 
     ; Read a value from INI safely, never throwing an exception
@@ -153,10 +153,10 @@ class Settings {
             defaultValue := this.values[key]
             stringValue := this._ReadIniSafe(section, name, this.BoolToString(defaultValue))
             this.values[key] := this.StringToBool(stringValue)
-            Log("Settings: Loaded " . key . " = " . this.values[key])
+            Logger.Info("Settings: Loaded " . key . " = " . this.values[key])
         } catch {
             ; If any error occurs, keep the default
-            Log("Settings: Error loading " . key . ", using default: " . this.values[key])
+            Logger.Info("Settings: Error loading " . key . ", using default: " . this.values[key])
         }
     }
 
@@ -169,15 +169,15 @@ class Settings {
             ; Convert to integer and validate range
             intValue := Integer(stringValue)
             if (intValue < min || intValue > max) {
-                Log("Settings: Value for " . key . " out of range (" . intValue . "), using default")
+                Logger.Info("Settings: Value for " . key . " out of range (" . intValue . "), using default")
                 return
             }
 
             this.values[key] := intValue
-            Log("Settings: Loaded " . key . " = " . this.values[key])
+            Logger.Info("Settings: Loaded " . key . " = " . this.values[key])
         } catch {
             ; If any error occurs, keep the default
-            Log("Settings: Error loading " . key . ", using default: " . this.values[key])
+            Logger.Info("Settings: Error loading " . key . ", using default: " . this.values[key])
         }
     }
 
@@ -187,17 +187,17 @@ class Settings {
             defaultValue := this.values[key]
             stringValue := this._ReadIniSafe(section, name, defaultValue)
             this.values[key] := stringValue
-            Log("Settings: Loaded " . key . " = " . this.values[key])
+            Logger.Info("Settings: Loaded " . key . " = " . this.values[key])
         } catch {
             ; If any error occurs, keep the default
-            Log("Settings: Error loading " . key . ", using default: " . this.values[key])
+            Logger.Info("Settings: Error loading " . key . ", using default: " . this.values[key])
         }
     }
 
     ; Save current settings to INI file
     SaveSettings() {
         try {
-            Log("Settings: Saving settings to " . this.iniPath)
+            Logger.Info("Settings: Saving settings to " . this.iniPath)
 
             ; Skip region settings
             IniWrite(this.values["skipRegionLeft"], this.iniPath, "Regions", "SkipLeft")
@@ -223,12 +223,12 @@ class Settings {
             ; Emergency shutdown setting
             IniWrite(this.BoolToString(this.values["isEmergencyShutdownEnabled"]), this.iniPath, "Features", "EmergencyShutdown")
 
-            Log("Settings: Successfully saved all settings to INI")
+            Logger.Info("Settings: Successfully saved all settings to INI")
 
             return true
         }
         catch as err {
-            Log("Settings: Failed to save settings: " . err.Message)
+            Logger.Error("Settings: Failed to save settings: " . err.Message)
             return false
         }
     }

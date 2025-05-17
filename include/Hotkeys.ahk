@@ -37,7 +37,7 @@ ProcessArrowAction(actionType, key, clickType, useDoubleClick) {
     if (ClickState.IsClickInProgress()) {
         ; Cancel existing action
         currentActionType := ClickState.GetCurrentClickType()
-        Log("Cancelling existing " . currentActionType . " action due to new " . actionType . " request")
+        Logger.Info("Cancelling existing " . currentActionType . " action due to new " . actionType . " request")
         pendingCancellation := true
         cancelledByKey := key
         cancelledActionType := currentActionType
@@ -47,7 +47,7 @@ ProcessArrowAction(actionType, key, clickType, useDoubleClick) {
 
     ; Check if the skip region is defined
     if (clickType = "skip" && !RegionHandler.skipRegion.active) {
-        Log(actionType . " action ignored - skip region not defined")
+        Logger.Info(actionType . " action ignored - skip region not defined")
         ; Get current mouse position for the tooltip
         MouseGetPos(&mouseX, &mouseY)
         ; Show tooltip guiding user to define region first
@@ -63,7 +63,7 @@ ProcessArrowAction(actionType, key, clickType, useDoubleClick) {
     ; Check if the region is defined
     if (clickType = "skip") {
         if (!RegionHandler.skipRegion.active) {
-            Log(actionType . " action ignored - skip region not defined")
+            Logger.Info(actionType . " action ignored - skip region not defined")
             ; Clear state variables even for ignored actions
             pendingCancellation := false
             cancelledByKey := ""
@@ -77,7 +77,7 @@ ProcessArrowAction(actionType, key, clickType, useDoubleClick) {
     currentTaskId := ClickState.StartClick(clickType)
 
     ; Log starting the action
-    Log("Starting " . actionType . " action (Task ID: " . currentTaskId . ") - " . clickType . " click")
+    Logger.Info("Starting " . actionType . " action (Task ID: " . currentTaskId . ") - " . clickType . " click")
 
     ; Get the mouse position to check if it's in the region
     MouseGetPos(&mouseX, &mouseY)
@@ -87,7 +87,7 @@ ProcessArrowAction(actionType, key, clickType, useDoubleClick) {
         inRegion := RegionHandler.IsMouseInSkipRegion()
 
         if (!inRegion) {
-            Log("Mouse is not in the skip region. Move mouse to the region first.")
+            Logger.Info("Mouse is not in the skip region. Move mouse to the region first.")
             TooltipManager.Show("Move mouse to the skip button region first", mouseX + 20, mouseY + 20)
             ; No need for a separate timer as the TooltipManager handles auto-hiding
 
@@ -108,7 +108,7 @@ ProcessArrowAction(actionType, key, clickType, useDoubleClick) {
     if (success) {
         ; Get final position for notification
         MouseGetPos(&endX, &endY)
-        Log(actionType . " action completed successfully (Task ID: " . currentTaskId . ")")
+        Logger.Info(actionType . " action completed successfully (Task ID: " . currentTaskId . ")")
 
         ; Show a tooltip for successful skip
         if (clickType = "skip") {
@@ -127,17 +127,17 @@ ProcessArrowAction(actionType, key, clickType, useDoubleClick) {
             )
             try {
                 host.SendMessage(response)
-                Log("Sent hotkey notification to Chrome for " . key)
+                Logger.Info("Sent hotkey notification to Chrome for " . key)
             } catch Error as e {
-                Log("Failed to send " . key . " hotkey notification: " . e.Message)
+                Logger.Error("Failed to send " . key . " hotkey notification: " . e.Message)
             }
         }
     } else {
         ; Check if it was cancelled by another key press
         if (pendingCancellation && cancelledByKey != "") {
-            Log(actionType . " action was cancelled by " . cancelledByKey . " key press (Task ID: " . currentTaskId . ")")
+            Logger.Info(actionType . " action was cancelled by " . cancelledByKey . " key press (Task ID: " . currentTaskId . ")")
         } else {
-            Log(actionType . " action failed or was cancelled (Task ID: " . currentTaskId . ")")
+            Logger.Info(actionType . " action failed or was cancelled (Task ID: " . currentTaskId . ")")
         }
     }
 
@@ -162,7 +162,7 @@ Left::
     if (!leftKeyIsDown) {
         leftKeyDownTime := A_TickCount
         leftKeyIsDown := true
-        Log("Left key down at: " . leftKeyDownTime)
+        Logger.Debug("Left key down at: " . leftKeyDownTime)
 
         ; Set default - we didn't cancel anything yet
         leftKeyCancelledAction := false
@@ -170,7 +170,7 @@ Left::
         ; If an action is in progress, cancel it and mark that this key did it
         if (ClickState.IsClickInProgress()) {
             currentActionType := ClickState.GetCurrentClickType()
-            Log("Action in progress - will be cancelled by left arrow key press")
+            Logger.Info("Action in progress - will be cancelled by left arrow key press")
             pendingCancellation := true
             cancelledByKey := "left_arrow"
             cancelledActionType := currentActionType
@@ -179,10 +179,10 @@ Left::
             ; Only set flag if we cancelled our own action type (skip)
             if (currentActionType = "skip") {
                 leftKeyCancelledAction := true
-                Log("Left arrow key cancelled its own action type (skip)")
+                Logger.Debug("Left arrow key cancelled its own action type (skip)")
             } else {
                 ; If we cancelled another action, do not prevent our action from running
-                Log("Left arrow key cancelled a different action type (" . currentActionType . "), will execute on key-up")
+                Logger.Debug("Left arrow key cancelled a different action type (" . currentActionType . "), will execute on key-up")
                 leftKeyCancelledAction := false
             }
         }
@@ -201,12 +201,12 @@ Left Up::  ; Left arrow key handler
     if (leftKeyIsDown) {
         keyUpTime := A_TickCount
         keyPressDuration := keyUpTime - leftKeyDownTime
-        Log("Left arrow key was pressed for " . keyPressDuration . " ms (Down: " . leftKeyDownTime . ", Up: " . keyUpTime . ")")
+        Logger.Debug("Left arrow key was pressed for " . keyPressDuration . " ms (Down: " . leftKeyDownTime . ", Up: " . keyUpTime . ")")
         leftKeyIsDown := false
 
         ; Only proceed if key was held less than 3000ms
         if (keyPressDuration >= 3000) {
-            Log("Left arrow action skipped - key was held too long (" . keyPressDuration . "ms)")
+            Logger.Info("Left arrow action skipped - key was held too long (" . keyPressDuration . "ms)")
             ; Get mouse position for tooltip
             MouseGetPos(&mouseX, &mouseY)
             ; Show tooltip indicating cancellation by long press
@@ -216,7 +216,7 @@ Left Up::  ; Left arrow key handler
 
         ; Check if this key just cancelled its own action type
         if (leftKeyCancelledAction) {
-            Log("Left arrow key-up ignored - this key just cancelled its own action type")
+            Logger.Debug("Left arrow key-up ignored - this key just cancelled its own action type")
             leftKeyCancelledAction := false
             return
         }
@@ -240,7 +240,7 @@ Right::
     if (!rightKeyIsDown) {
         rightKeyDownTime := A_TickCount
         rightKeyIsDown := true
-        Log("Right key down at: " . rightKeyDownTime)
+        Logger.Debug("Right key down at: " . rightKeyDownTime)
 
         ; Set default - we didn't cancel anything yet
         rightKeyCancelledAction := false
@@ -248,7 +248,7 @@ Right::
         ; If an action is in progress, cancel it and mark that this key did it
         if (ClickState.IsClickInProgress()) {
             currentActionType := ClickState.GetCurrentClickType()
-            Log("Action in progress - will be cancelled by right arrow key press")
+            Logger.Info("Action in progress - will be cancelled by right arrow key press")
             pendingCancellation := true
             cancelledByKey := "right_arrow"
             cancelledActionType := currentActionType
@@ -257,10 +257,10 @@ Right::
             ; Only set flag if we cancelled our own action type
             if (currentActionType = "skip") {
                 rightKeyCancelledAction := true
-                Log("Right arrow key cancelled its own action type")
+                Logger.Debug("Right arrow key cancelled its own action type")
             } else {
                 ; If we cancelled another action, do not prevent our action from running
-                Log("Right arrow key cancelled a different action type (" . currentActionType . "), will execute on key-up")
+                Logger.Debug("Right arrow key cancelled a different action type (" . currentActionType . "), will execute on key-up")
                 rightKeyCancelledAction := false
             }
         }
@@ -280,13 +280,13 @@ Right Up::  ; Right arrow key handler
     if (rightKeyIsDown) {
         keyUpTime := A_TickCount
         keyPressDuration := keyUpTime - rightKeyDownTime
-        Log("Right arrow key was pressed for " . keyPressDuration . " ms (Down: " . rightKeyDownTime . ", Up: " . keyUpTime . ")")
+        Logger.Debug("Right arrow key was pressed for " . keyPressDuration . " ms (Down: " . rightKeyDownTime . ", Up: " . keyUpTime . ")")
         rightKeyIsDown := false
 
         ; Check for emergency shutdown activation if held for more than 1 second but less than 3 seconds
         ; This works regardless of isRightArrowBlocked state, if emergency shutdown is enabled
         if (isEmergencyShutdownEnabled && keyPressDuration >= 1000 && keyPressDuration < 3000) {
-            Log("Emergency shutdown sequence initiated. Using 200ms delay in separate thread...")
+            Logger.Info("Emergency shutdown sequence initiated. Using 200ms delay in separate thread...")
             ; Use SetTimer to exit after 200ms delay in a separate thread
             SetTimer(() => ExitApp(), -200)
             return
@@ -294,13 +294,13 @@ Right Up::  ; Right arrow key handler
 
         ; Only proceed with toggle/skip actions if right arrow blocking is enabled
         if (!isRightArrowBlocked) {
-            Log("Right arrow regular actions skipped - right arrow toggle is off")
+            Logger.Debug("Right arrow regular actions skipped - right arrow toggle is off")
             return
         }
 
         ; Only proceed if key was held less than 3000ms
         if (keyPressDuration >= 3000) {
-            Log("Right arrow action skipped - key was held too long (" . keyPressDuration . "ms)")
+            Logger.Info("Right arrow action skipped - key was held too long (" . keyPressDuration . "ms)")
             ; Get mouse position for tooltip
             MouseGetPos(&mouseX, &mouseY)
             ; Show tooltip indicating cancellation by long press
@@ -310,7 +310,7 @@ Right Up::  ; Right arrow key handler
 
         ; Check if this key just cancelled its own action type
         if (rightKeyCancelledAction) {
-            Log("Right arrow key-up ignored - this key just cancelled its own action type")
+            Logger.Debug("Right arrow key-up ignored - this key just cancelled its own action type")
             rightKeyCancelledAction := false
             return
         }
@@ -322,7 +322,7 @@ Right Up::  ; Right arrow key handler
             UpdateSetting("isSkipperSuppressed", isSkipperSuppressed)
 
             ; Log the change
-            Log("Skipper functionality " . (isSkipperSuppressed ? "disabled" : "enabled") . " by right arrow key")
+            Logger.Info("Skipper functionality " . (isSkipperSuppressed ? "disabled" : "enabled") . " by right arrow key")
 
             ; Update GUI - using the global gGui variable
             global gGui
@@ -332,9 +332,9 @@ Right Up::  ; Right arrow key handler
                     gGui.skipperEnabledCb.Value := isSkipperSuppressed
                     gGui.ToggleSkipperEnabled()
 
-                    Log("Updated UI controls from hotkey")
+                    Logger.Debug("Updated UI controls from hotkey")
                 } catch Error as e {
-                    Log("Failed to update UI from hotkey: " . e.Message)
+                    Logger.Error("Failed to update UI from hotkey: " . e.Message)
                 }
             }
 
@@ -356,9 +356,9 @@ Right Up::  ; Right arrow key handler
                 )
                 try {
                     host.SendMessage(response)
-                    Log("Sent skipper toggle notification to Chrome")
+                    Logger.Info("Sent skipper toggle notification to Chrome")
                 } catch Error as e {
-                    Log("Failed to send skipper toggle notification: " . e.Message)
+                    Logger.Error("Failed to send skipper toggle notification: " . e.Message)
                 }
             }
             return
@@ -390,7 +390,7 @@ Up::
     if (!upKeyIsDown) {
         upKeyDownTime := A_TickCount
         upKeyIsDown := true
-        Log("Up key down at: " . upKeyDownTime)
+        Logger.Debug("Up key down at: " . upKeyDownTime)
 
         ; Set default - we didn't cancel anything yet
         upKeyCancelledAction := false
@@ -398,7 +398,7 @@ Up::
         ; If an action is in progress, cancel it and mark that this key did it
         if (ClickState.IsClickInProgress()) {
             currentActionType := ClickState.GetCurrentClickType()
-            Log("Action in progress - will be cancelled by up arrow key press")
+            Logger.Info("Action in progress - will be cancelled by up arrow key press")
             pendingCancellation := true
             cancelledByKey := "up_arrow"
             cancelledActionType := currentActionType
@@ -407,10 +407,10 @@ Up::
             ; Only set flag if we cancelled our own action type (skip)
             if (currentActionType = "skip") {
                 upKeyCancelledAction := true
-                Log("Up arrow key cancelled its own action type (skip)")
+                Logger.Debug("Up arrow key cancelled its own action type (skip)")
             } else {
                 ; If we cancelled another action (like stop), do not prevent our action from running
-                Log("Up arrow key cancelled a different action type (" . currentActionType . "), will execute on key-up")
+                Logger.Debug("Up arrow key cancelled a different action type (" . currentActionType . "), will execute on key-up")
                 upKeyCancelledAction := false
             }
         }
@@ -435,12 +435,12 @@ Up Up::  ; Up arrow key handler
     if (upKeyIsDown) {
         keyUpTime := A_TickCount
         keyPressDuration := keyUpTime - upKeyDownTime
-        Log("Up arrow key was pressed for " . keyPressDuration . " ms (Down: " . upKeyDownTime . ", Up: " . keyUpTime . ")")
+        Logger.Debug("Up arrow key was pressed for " . keyPressDuration . " ms (Down: " . upKeyDownTime . ", Up: " . keyUpTime . ")")
         upKeyIsDown := false
 
         ; Only proceed if key was held less than 3000ms
         if (keyPressDuration >= 3000) {
-            Log("Up arrow action skipped - key was held too long (" . keyPressDuration . "ms)")
+            Logger.Info("Up arrow action skipped - key was held too long (" . keyPressDuration . "ms)")
             ; Get mouse position for tooltip
             MouseGetPos(&mouseX, &mouseY)
             ; Show tooltip indicating cancellation by long press
@@ -450,14 +450,14 @@ Up Up::  ; Up arrow key handler
 
         ; Check if this key just cancelled its own action type
         if (upKeyCancelledAction) {
-            Log("Up arrow key-up ignored - this key just cancelled its own action type")
+            Logger.Debug("Up arrow key-up ignored - this key just cancelled its own action type")
             upKeyCancelledAction := false
             return
         }
 
         ; Check if host is available for blacklist operations
         if (!host || host.isManualMode) {
-            Log("Up arrow hotkey (blacklist+skip) - blacklist action failed: Host not connected")
+            Logger.Warn("Up arrow hotkey (blacklist+skip) - blacklist action failed: Host not connected")
             MsgBox("Cannot add to blacklist - Videochat Extension connection is required.`n`nPlease make sure the extension is installed and connected to Skipper (there is a dedicated tab for it in the extension UI).", "Extension Not Connected", "Icon!")
             return
         } else {
@@ -470,13 +470,13 @@ Up Up::  ; Up arrow key handler
             )
             try {
                 host.SendMessage(blacklistMsg)
-                Log("Sent blacklist add notification to Chrome for up arrow")
+                Logger.Info("Sent blacklist add notification to Chrome for up arrow")
 
                 ; Show tooltip for blacklist+skip action
                 MouseGetPos(&mouseX, &mouseY)
                 TooltipManager.Show("BLACKLISTED + SKIP!", mouseX + 20, mouseY - 40, 1500, "992200", "FFFFFF", 230)
             } catch Error as e {
-                Log("Failed to send up arrow blacklist notification: " . e.Message)
+                Logger.Error("Failed to send up arrow blacklist notification: " . e.Message)
             }
         }
 
@@ -499,7 +499,7 @@ Down::
     if (!downKeyIsDown) {
         downKeyDownTime := A_TickCount
         downKeyIsDown := true
-        Log("Down key down at: " . downKeyDownTime)
+        Logger.Debug("Down key down at: " . downKeyDownTime)
 
         ; Down arrow performs an instant action (blacklist), so it shouldn't cancel ongoing actions
         ; This allows blacklisting while skip/stop is in progress
@@ -508,7 +508,7 @@ Down::
         ; Log if an action is in progress, but don't cancel it
         if (ClickState.IsClickInProgress()) {
             currentActionType := ClickState.GetCurrentClickType()
-            Log("Action in progress (" . currentActionType . ") - Down arrow will NOT cancel it (instant action)")
+            Logger.Debug("Action in progress (" . currentActionType . ") - Down arrow will NOT cancel it (instant action)")
         }
     }
     return
@@ -529,12 +529,12 @@ Down Up::  ; Down arrow key handler
     if (downKeyIsDown) {
         keyUpTime := A_TickCount
         keyPressDuration := keyUpTime - downKeyDownTime
-        Log("Down arrow key was pressed for " . keyPressDuration . " ms (Down: " . downKeyDownTime . ", Up: " . keyUpTime . ")")
+        Logger.Debug("Down arrow key was pressed for " . keyPressDuration . " ms (Down: " . downKeyDownTime . ", Up: " . keyUpTime . ")")
         downKeyIsDown := false
 
         ; Only proceed if key was held less than 3000ms
         if (keyPressDuration >= 3000) {
-            Log("Down arrow action skipped - key was held too long (" . keyPressDuration . "ms)")
+            Logger.Info("Down arrow action skipped - key was held too long (" . keyPressDuration . "ms)")
             ; Get mouse position for tooltip
             MouseGetPos(&mouseX, &mouseY)
             ; Show tooltip indicating cancellation by long press
@@ -546,7 +546,7 @@ Down Up::  ; Down arrow key handler
 
         ; Check if host is available for blacklist operations
         if (!host || host.isManualMode) {
-            Log("Down arrow hotkey (blacklist) - blacklist action failed: Host not connected")
+            Logger.Warn("Down arrow hotkey (blacklist) - blacklist action failed: Host not connected")
             MsgBox("Cannot add to blacklist - Videochat Extension connection is required.`n`nPlease make sure the extension is installed and connected to Skipper (there is a dedicated tab for it in the extension UI).", "Extension Not Connected", "Icon!")
             return
         }
@@ -560,13 +560,13 @@ Down Up::  ; Down arrow key handler
         )
         try {
             host.SendMessage(blacklistMsg)
-            Log("Sent blacklist add notification to Chrome for down arrow")
+            Logger.Info("Sent blacklist add notification to Chrome for down arrow")
 
             ; Show tooltip for blacklist-only action
             MouseGetPos(&mouseX, &mouseY)
             TooltipManager.Show("BAN/UNBAN", mouseX + 20, mouseY - 40, 1500, "992200", "FFFFFF", 230)
         } catch Error as e {
-            Log("Failed to send down arrow blacklist notification: " . e.Message)
+            Logger.Error("Failed to send down arrow blacklist notification: " . e.Message)
         }
     }
     return

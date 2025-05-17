@@ -54,7 +54,7 @@ CheckForUpdates(silent := true)
                         releaseUrl, "Click here to view the release page")
                 } catch Error as e {
                     ; Fallback to standard MsgBox if custom dialog fails
-                    Log("Error showing update dialog: " e.Message)
+                    Logger.Error("Error showing update dialog: " e.Message)
                     result := MsgBox("A new version (" latestVersion ") is available!`n`nCurrent version: " AppVersion "`n`nWould you like to visit the release page?`n`nRelease page: " releaseUrl, "Update Available", "YesNo")
                 }
                 
@@ -70,7 +70,7 @@ CheckForUpdates(silent := true)
                         releaseUrl, "Click here to view the release page")
                 } catch Error as e {
                     ; Fallback to standard MsgBox if custom dialog fails
-                    Log("Error showing update dialog: " e.Message)
+                    Logger.Error("Error showing update dialog: " e.Message)
                     result := MsgBox("A new version (" latestVersion ") is available!`n`nCurrent version: " AppVersion "`n`nWould you like to download and install the update?`n`nRelease page: " releaseUrl, "Update Available", "YesNo")
                 }
                 
@@ -116,35 +116,6 @@ IsNewerVersion(latestVersion, currentVersion)
         return false
 
     return latestNum > currentNum
-}
-
-; Utility functions for the application
-
-; Global reference to the GUI for logging
-global gGui := ""
-
-; Set the GUI reference for logging
-SetGUIReference(guiRef) {
-    global gGui
-    gGui := guiRef
-}
-
-; Central logging function to redirect all debug messages to GUI log and system debug
-Log(message) {
-    ; Always output to system debug
-    OutputDebug(message)
-
-    ; Also send to GUI log if available
-    global gGui
-    if (IsSet(gGui) && gGui) {
-        try {
-            gGui.UpdateLog(message)
-        } catch Error as e {
-            ; If GUI logging fails, at least we have the system debug output
-            ; But who cares?
-            OutputDebug("Failed to log to GUI: " . e.Message)
-        }
-    }
 }
 
 ; Custom dialog function with clickable link

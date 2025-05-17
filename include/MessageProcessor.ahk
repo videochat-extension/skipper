@@ -10,25 +10,25 @@ class MessageProcessor {
 
     ; Process incoming messages
     ProcessMessage(msg) {
-        this.gui.UpdateLog("Received message: " . Jxon_Dump(msg))
+        Logger.Info("Received message: " . Jxon_Dump(msg))
 
         ; Ensure msg is an object
         if (Type(msg) == "String") {
             try {
                 msg := Jxon_Load(msg)
-                this.gui.UpdateLog("Converted string message to object")
+                Logger.Info("Converted string message to object")
             } catch Error as e {
-                this.gui.UpdateLog("Error parsing message: " . e.Message)
+                Logger.Error("Error parsing message: " . e.Message)
                 return
             }
         }
 
         ; Debug: Log message structure
-        this.gui.UpdateLog("Debug - Message type: " . (msg.Has("type") ? msg["type"] : "NOT FOUND"))
+        Logger.Debug("Message type: " . (msg.Has("type") ? msg["type"] : "NOT FOUND"))
 
         ; If 'type' is not present, ignore message
         if (!msg.Has("type")) {
-            this.gui.UpdateLog("Error: Message has no type field")
+            Logger.Error("Message has no type field")
             return
         }
 
@@ -40,7 +40,7 @@ class MessageProcessor {
             case "ping":
                 response := Map("type", "pong")
                 this.SendResponse(response)
-                this.gui.UpdateLog("Sent: pong response")
+                Logger.Info("Sent: pong response")
                 return
 
             case "version":
@@ -51,18 +51,18 @@ class MessageProcessor {
                     "name", AppName
                 )
                 this.SendResponse(response)
-                this.gui.UpdateLog("Sent version information: " . AppVersion)
+                Logger.Info("Sent version information: " . AppVersion)
                 return
 
             case "skipper":
                 if (msg.Has("action")) {
                     action := msg["action"]
                     if (action = "skip") {
-                        this.gui.UpdateLog("Executing SKIP command")
+                        Logger.Info("Executing SKIP command")
                         this.ExecuteClickAction("skip")
                     }
                     else if (action = "cancel") {
-                        this.gui.UpdateLog("Executing CANCEL command")
+                        Logger.Info("Executing CANCEL command")
                         ; Check if we should exclude hotkey-initiated actions
                         excludeHotkeys := msg.Has("excludeHotkeys") ? msg["excludeHotkeys"] : false
 
@@ -80,7 +80,7 @@ class MessageProcessor {
                         return
                     }
                     else {
-                        this.gui.UpdateLog("Unknown skipper action: " . action)
+                        Logger.Warn("Unknown skipper action: " . action)
                     }
 
                     response := Map("type", "skipper", "status", "success", "action", action)
@@ -88,30 +88,18 @@ class MessageProcessor {
                     return
                 }
 
-                this.gui.UpdateLog("Error: Skipper message missing action")
+                Logger.Error("Skipper message missing action")
                 return
 
             case "define_region":
-                this.gui.UpdateLog("Received request to define skip region")
+                Logger.Info("Received request to define skip region")
                 RegionHandler.StartRegionSelection("skip")
                 response := Map("type", "define_region", "status", "initiated")
                 this.SendResponse(response)
                 return
 
-                ; New API endpoint to cancel non-hotkey actions
-            case "cancel_non_hotkey_action":
-                result := this.CancelNonHotkeyAction("API request")
-                response := Map(
-                    "type", "cancel_result",
-                    "cancelled", result.cancelled,
-                    "wasHotkey", result.wasHotkey,
-                    "actionType", result.actionType
-                )
-                this.SendResponse(response)
-                return
-
             case "show_region":
-                this.gui.UpdateLog("Received request to show skip region temporarily")
+                Logger.Info("Received request to show skip region temporarily")
                 if (!RegionHandler.skipRegion.active) {
                     response := Map("type", "show_region", "status", "error", "message", "Skip region not defined")
                 } else {
@@ -132,7 +120,7 @@ class MessageProcessor {
                 return
 
             default:
-                this.gui.UpdateLog("Unknown message type: " . msgType)
+                Logger.Warn("Unknown message type: " . msgType)
                 return
         }
     }
@@ -155,7 +143,7 @@ class MessageProcessor {
             ; Check if this was initiated by a hotkey
             if (ClickState_InitiatedByHotkey) {
                 ; Don't cancel hotkey-initiated actions
-                this.gui.UpdateLog("Not cancelling " . result.actionType . " operation - it was initiated by a hotkey")
+                Logger.Info("Not cancelling " . result.actionType . " operation - it was initiated by a hotkey")
                 result.wasHotkey := true
                 return result
             }
@@ -167,7 +155,7 @@ class MessageProcessor {
             ; Cancel the click operation with reason
             ClickState.CancelClick(reason)
 
-            this.gui.UpdateLog("Cancelled " . clickType . " operation (Task ID: " . lastTaskId . ") - Reason: " . reason)
+            Logger.Info("Cancelled " . clickType . " operation (Task ID: " . lastTaskId . ") - Reason: " . reason)
 
             ; Set global tracking variables
             global pendingCancellation := true
@@ -176,7 +164,7 @@ class MessageProcessor {
             result.cancelled := true
             return result
         } else {
-            this.gui.UpdateLog("No click operation in progress to cancel")
+            Logger.Info("No click operation in progress to cancel")
             return result
         }
     }
@@ -189,7 +177,7 @@ class MessageProcessor {
         if (ClickState.IsClickInProgress()) {
             ; Check if we should exclude hotkey actions
             if (excludeHotkeys && ClickState_InitiatedByHotkey) {
-                this.gui.UpdateLog("Not cancelling action - it was initiated by a hotkey and excludeHotkeys is true")
+                Logger.Info("Not cancelling action - it was initiated by a hotkey and excludeHotkeys is true")
                 return false
             }
 
@@ -199,7 +187,7 @@ class MessageProcessor {
             ; Cancel the click operation with reason
             ClickState.CancelClick(reason)
 
-            this.gui.UpdateLog("Cancelled " . clickType . " operation (Task ID: " . lastTaskId . ") - Reason: " . reason)
+            Logger.Info("Cancelled " . clickType . " operation (Task ID: " . lastTaskId . ") - Reason: " . reason)
 
             ; Set global tracking variables
             global pendingCancellation := true
@@ -207,7 +195,7 @@ class MessageProcessor {
 
             return true
         } else {
-            this.gui.UpdateLog("No click operation in progress to cancel")
+            Logger.Info("No click operation in progress to cancel")
             return false
         }
     }
@@ -222,7 +210,7 @@ class MessageProcessor {
         }
 
         ; Log and execute the action
-        this.gui.UpdateLog("Processing click request: " . clickType)
+        Logger.Info("Processing click request: " . clickType)
         
         ; Mark this as NOT initiated by hotkey (it's from API)
         global ClickState_InitiatedByHotkey := false
@@ -233,7 +221,7 @@ class MessageProcessor {
 
             ; First check if region is defined
             if (!RegionHandler.skipRegion.active) {
-                this.gui.UpdateLog("Skip region not defined - cannot perform action")
+                Logger.Info("Skip region not defined - cannot perform action")
                 response := Map("type", "skipper", "status", "error", "message", "Skip region not defined")
                 this.SendResponse(response)
                 return false
@@ -244,7 +232,7 @@ class MessageProcessor {
 
             ; Check if mouse is in skip region
             if (!RegionHandler.IsMouseInSkipRegion()) {
-                this.gui.UpdateLog("Mouse is not in skip region (API check at " . apiMouseX . "," . apiMouseY . ") - cannot perform action")
+                Logger.Info("Mouse is not in skip region (API check at " . apiMouseX . "," . apiMouseY . ") - cannot perform action")
                 ; Show tooltip guiding user to move mouse to the skip region
                 TooltipManager.Show("Move mouse to the skip button region first", apiMouseX + 20, apiMouseY + 20, 2000, "993333", "FFFFFF", 230)
                 response := Map("type", "skipper", "status", "error", "message", "Mouse cursor is not in the skip region")
@@ -273,22 +261,22 @@ class MessageProcessor {
             if (this.host) { ; Simplified check: ensure host object exists
                 this.host.SendMessage(response)
             } else {
-                this.gui.UpdateLog("Error sending response: Host object not available.")
+                Logger.Error("Error sending response: Host object not available.")
             }
         } catch Error as e {
-            this.gui.UpdateLog("Error sending response: " . e.Message)
+            Logger.Error("Error sending response: " . e.Message)
         }
     }
 
     ; Handle skipper command
     HandleSkipperCommand(command, args, messageType) {
-        Log("Processing skipper command: " . command)
+        Logger.Info("Processing skipper command: " . command)
 
         ; Handle skip command
         if (command = "skip") {
             ; First check if region is defined
             if (!RegionHandler.skipRegion.active) {
-                Log("Skip command from extension ignored - skip region not defined")
+                Logger.Info("Skip command from extension ignored - skip region not defined")
                 ; Get current mouse position for the tooltip
                 MouseGetPos(&mouseX, &mouseY)
                 ; Show tooltip guiding user to define region first

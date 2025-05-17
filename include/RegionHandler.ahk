@@ -26,14 +26,14 @@ class RegionHandler {
 
     ; Initialize the region handler
     static Initialize() {
-        Log("Initializing RegionHandler...")
+        Logger.Info("Initializing RegionHandler...")
         ; Set up Escape hotkey for cancellation
         Hotkey("Escape", (*) => this.CancelSelection(), "On")
     }
 
     ; Start selection of a region for skip button
     static StartRegionSelection(regionType) {
-        Log("Starting region selection for: " . regionType)
+        Logger.Info("Starting region selection for: " . regionType)
 
         ; Store initial mouse position for teleporting back later
         MouseGetPos(&initialX, &initialY)
@@ -125,7 +125,7 @@ class RegionHandler {
         if (IsSet(prevDpiContext))
             DllCall("SetThreadDpiAwarenessContext", "ptr", prevDpiContext, "ptr")
 
-        Log("Showing previous region overlay during selection")
+        Logger.Info("Showing previous region overlay during selection")
     }
 
     ; Hides the previous region overlay
@@ -200,7 +200,7 @@ class RegionHandler {
         if (IsSet(prevDpiContext))
             DllCall("SetThreadDpiAwarenessContext", "ptr", prevDpiContext, "ptr")
 
-        Log("Showing always-visible region overlay with transparency: " . regionTransparency . " and color: " . regionColor)
+        Logger.Info("Showing always-visible region overlay with transparency: " . regionTransparency . " and color: " . regionColor)
     }
 
     ; Calculate a contrasting text color (black or white) based on background color
@@ -243,7 +243,7 @@ class RegionHandler {
     ; Cancel the current selection process - accepts any number of parameters for Hotkey compatibility
     static CancelSelection(*) {
         if (this.SelectionActive) {
-            Log("Selection cancelled by user")
+            Logger.Info("Selection cancelled by user")
             this.EscapePressed := true
             this.SelectionActive := false
 
@@ -403,7 +403,7 @@ class RegionHandler {
             ; Store region based on type - check minimum size
             if (this.CurrentRegionType = "skip" && width > 10 && height > 10) {
                 this.skipRegion := { left: left, top: top, right: right, bottom: bottom, active: true, visible: false }
-                Log("Skip region selected: Left=" . left . ", Top=" . top . ", Right=" . right . ", Bottom=" . bottom)
+                Logger.Info("Skip region selected: Left=" . left . ", Top=" . top . ", Right=" . right . ", Bottom=" . bottom)
 
                 ; Update settings
                 UpdateSetting("skipRegionLeft", left)
@@ -469,7 +469,7 @@ class RegionHandler {
         this.skipRegion.bottom := settingsManager.Get("skipRegionBottom", 0)
         this.skipRegion.active := settingsManager.Get("skipRegionActive", false)
 
-        Log("Loaded skip region from settings: Left=" . this.skipRegion.left .
+        Logger.Info("Loaded skip region from settings: Left=" . this.skipRegion.left .
             ", Top=" . this.skipRegion.top .
             ", Right=" . this.skipRegion.right .
             ", Bottom=" . this.skipRegion.bottom .
@@ -485,7 +485,7 @@ class RegionHandler {
 
         ; Update the transparency
         WinSetTransparent(transparency, this.regionOverlayGui)
-        Log("Updated region overlay transparency to: " . transparency)
+        Logger.Info("Updated region overlay transparency to: " . transparency)
     }
 
     ; Updates the color of the region overlay
@@ -505,7 +505,7 @@ class RegionHandler {
         global regionColor := color
         this.ShowRegionOverlay()
 
-        Log("Updated region overlay color to: " . color)
+        Logger.Info("Updated region overlay color to: " . color)
     }
 
     ; Shows the skip region temporarily

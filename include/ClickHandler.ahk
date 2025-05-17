@@ -2,7 +2,7 @@
 class ClickHandler {
     ; Function to set cursor to crosshair
     static SetCursorToCrosshair() {
-        Log("Setting cursor to crosshair")
+        Logger.Info("Setting cursor to crosshair")
         ; IDC_CROSS = 32515
         CursorHandle := DllCall("LoadCursor", "Ptr", 0, "Ptr", 32515, "Ptr")
         ; OCR_CROSS = 32515
@@ -11,7 +11,7 @@ class ClickHandler {
 
     ; Function to restore default cursor
     static RestoreDefaultCursor() {
-        Log("Restoring default cursor")
+        Logger.Info("Restoring default cursor")
         DllCall("SystemParametersInfo", "UInt", 0x57, "UInt", 0, "Ptr", 0, "UInt", 0)  ; SPI_SETCURSORS := 0x57
     }
 
@@ -25,7 +25,7 @@ class ClickHandler {
 
         ; Check for cancellation before first click
         if (ClickState.ShouldCancel(clickId)) {
-            Log("Cancelling click operation before first click")
+            Logger.Info("Cancelling click operation before first click")
             TooltipManager.Show("Click cancelled", startX + 20, startY + 20)
             return false
         }
@@ -33,7 +33,7 @@ class ClickHandler {
         ; Check if mouse has moved since starting the click operation
         MouseGetPos(&currentX, &currentY)
         if (Abs(currentX - startX) > 3 || Abs(currentY - startY) > 3) {
-            Log("Mouse moved before click execution. Start: (" .
+            Logger.Info("Mouse moved before click execution. Start: (" .
                 startX . "," . startY . "), Current: (" .
                 currentX . "," . currentY . "). Cancelling click.")
             TooltipManager.Show("Click cancelled - mouse moved", currentX + 20, currentY + 20)
@@ -76,7 +76,7 @@ class ClickHandler {
 
             ; Second click up
             Click("Up")
-            Log("Second click of double-click completed")
+            Logger.Info("Second click of double-click completed")
         }
 
         ; Natural post-click settling time (wider range)
@@ -90,7 +90,7 @@ class ClickHandler {
 
         ; Check if skipper functionality is suppressed
         if (isSkipperSuppressed) {
-            Log("Click operation cancelled - Skipper functionality is suppressed")
+            Logger.Info("Click operation cancelled - Skipper functionality is suppressed")
             return false
         }
 
@@ -104,20 +104,20 @@ class ClickHandler {
         if (clickType = "skip") {
             ; Check if mouse is within skip region
             if (RegionHandler.IsMouseInSkipRegion()) {
-                Log("Mouse is within skip region. Performing " . (useDoubleClick ? "double-click" : "click") . " at current position (" . currentX . "," . currentY . ")")
+                Logger.Info("Mouse is within skip region. Performing " . (useDoubleClick ? "double-click" : "click") . " at current position (" . currentX . "," . currentY . ")")
                 clickResult := this.NaturalClick(useDoubleClick, clickId)
             } else {
-                Log("Mouse is NOT within skip region. Current position (" . currentX . "," . currentY . "). Skipping click.")
+                Logger.Info("Mouse is NOT within skip region. Current position (" . currentX . "," . currentY . "). Skipping click.")
                 ; Optionally display a tooltip to inform user
                 TooltipManager.Show("Move mouse to the skip button region first", currentX + 20, currentY + 20)
                 clickResult := false
             }
         } else {
             ; Handle undefined click type
-            Log("Error: Undefined click type '" . clickType . "'. Using current mouse position.")
+            Logger.Warn("Error: Undefined click type '" . clickType . "'. Using current mouse position.")
 
             ; Just perform click at current position without checking regions
-            Log("Performing click at current position (" . currentX . "," . currentY . ")" . (useDoubleClick ? " (double-click)" : ""))
+            Logger.Info("Performing click at current position (" . currentX . "," . currentY . ")" . (useDoubleClick ? " (double-click)" : ""))
             clickResult := this.NaturalClick(useDoubleClick, clickId)
         }
 

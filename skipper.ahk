@@ -9,6 +9,7 @@
 ;@Ahk2Exe-SetVersion %U_VERSION%
 
 ; Include dependencies - updated to use include folder
+#Include include/Logger.ahk
 #Include include/Jxon.ahk
 #Include include/NativeMessagingHost.ahk
 #Include include/RegistrationHelper.ahk
@@ -62,24 +63,27 @@ Main() {
     global isLeftArrowBlocked, isRightArrowBlocked, isUpArrowBlocked, isDownArrowBlocked, isEmergencyShutdownEnabled
     global showRegionText, showTooltipHints
 
-    Log("====== Application Starting ======")
-    Log("Version: " . AppVersion)
-    Log("Running as executable: " . (A_IsCompiled ? "Yes" : "No"))
-    Log("Script directory: " . A_ScriptDir)
-    Log("Working directory: " . A_WorkingDir)
-    Log("OS version: " . A_OSVersion)
-    Log("==============================")
+    ; Initialize the Logger
+    Logger.Init()
+    
+    Logger.Info("====== Application Starting ======")
+    Logger.Info("Version: " . AppVersion)
+    Logger.Info("Running as executable: " . (A_IsCompiled ? "Yes" : "No"))
+    Logger.Info("Script directory: " . A_ScriptDir)
+    Logger.Info("Working directory: " . A_WorkingDir)
+    Logger.Info("OS version: " . A_OSVersion)
+    Logger.Info("==============================")
 
     ; Create a mutex to help Inno Setup detect if the application is running
     DllCall("CreateMutex", "Ptr", 0, "Int", 0, "Str", "OmegleLikeSkipperMutex")
-    Log("Created application mutex for single-instance detection")
+    Logger.Info("Created application mutex for single-instance detection")
 
     ; Initialize settings manager
-    Log("Initializing settings manager...")
+    Logger.Info("Initializing settings manager...")
     settingsManager := Settings()
 
     ; Load settings into global variables for compatibility
-    Log("Loading settings into global variables...")
+    Logger.Info("Loading settings into global variables...")
     isSkipDoubleClicked := settingsManager.Get("isSkipDoubleClicked")
     isRegionAlwaysVisible := settingsManager.Get("isRegionAlwaysVisible")
     isSkipperSuppressed := settingsManager.Get("isSkipperSuppressed")
@@ -96,98 +100,94 @@ Main() {
     showTooltipHints := settingsManager.Get("showTooltipHints")
 
     ; Initialize TooltipManager with tooltip setting
-    Log("Initializing TooltipManager...")
+    Logger.Info("Initializing TooltipManager...")
     TooltipManager.Initialize(showTooltipHints)
 
-    Log("Settings loaded: Double-click settings: Skip=" . isSkipDoubleClicked)
-    Log("Region always visible: " . isRegionAlwaysVisible)
-    Log("Skipper suppressed: " . isSkipperSuppressed)
-    Log("Region transparency: " . regionTransparency)
-    Log("Region color: " . regionColor)
-    Log("Show region text: " . showRegionText)
-    Log("Show tooltip hints: " . showTooltipHints)
-    Log("Key blocking: Left Arrow=" . isLeftArrowBlocked . ", Right Arrow=" . isRightArrowBlocked . ", Up Arrow=" . isUpArrowBlocked . ", Down Arrow=" . isDownArrowBlocked)
-    Log("Emergency Shutdown: " . isEmergencyShutdownEnabled)
+    Logger.Info("Settings loaded: Double-click settings: Skip=" . isSkipDoubleClicked)
+    Logger.Info("Region always visible: " . isRegionAlwaysVisible)
+    Logger.Info("Skipper suppressed: " . isSkipperSuppressed)
+    Logger.Info("Region transparency: " . regionTransparency)
+    Logger.Info("Region color: " . regionColor)
+    Logger.Info("Show region text: " . showRegionText)
+    Logger.Info("Show tooltip hints: " . showTooltipHints)
+    Logger.Info("Key blocking: Left Arrow=" . isLeftArrowBlocked . ", Right Arrow=" . isRightArrowBlocked . ", Up Arrow=" . isUpArrowBlocked . ", Down Arrow=" . isDownArrowBlocked)
+    Logger.Info("Emergency Shutdown: " . isEmergencyShutdownEnabled)
 
     ; Initialize and load region handler
-    Log("Initializing region handler...")
+    Logger.Info("Initializing region handler...")
     RegionHandler.Initialize()
     RegionHandler.LoadFromSettings()
 
     ; Check for updates silently at startup
-    Log("Checking for updates (silent mode)...")
+    Logger.Info("Checking for updates (silent mode)...")
     CheckForUpdates(true)
 
     ; Create the registration helper
-    Log("Creating registration helper...")
+    Logger.Info("Creating registration helper...")
     regHelper := RegistrationHelper(HOST_NAME, HOST_DESCRIPTION, ALLOWED_ORIGINS)
 
     ; Always force registration on startup (foolproof approach)
-    Log("Always recreating manifest and registry on startup...")
+    Logger.Info("Always recreating manifest and registry on startup...")
     registrationSucceeded := regHelper.ForceRegister()
 
     if (registrationSucceeded) {
-        Log("Registration successful")
+        Logger.Info("Registration successful")
     } else {
         errorMsg := regHelper.GetLastError()
-        Log("Registration failed: " . errorMsg)
+        Logger.Error("Registration failed: " . errorMsg)
     }
 
     ; Create the native messaging host
-    Log("Creating native messaging host...")
+    Logger.Info("Creating native messaging host...")
     host := NativeMessagingHost()
 
     ; Create the GUI with registration helper
-    Log("Creating application GUI...")
+    Logger.Info("Creating application GUI...")
     gui := MessagingHostGUI(host, regHelper)
 
-    ; Set the global GUI reference for centralized logging
-    Log("Setting up centralized logging...")
-    SetGUIReference(gui)
-
     ; Create the message processor
-    Log("Creating message processor...")
+    Logger.Info("Creating message processor...")
     processor := MessageProcessor(gui, host)
 
     ; Set the message callback
     host.onMessageCallback := ObjBindMethod(processor, "ProcessMessage")
-    Log("Message callback handler registered")
+    Logger.Info("Message callback handler registered")
 
     ; Set up disconnect callback if not in manual mode
     if (!host.isManualMode) {
         host.onDisconnect := ObjBindMethod(gui, "LogDisconnection")
-        Log("Disconnect handler registered")
+        Logger.Info("Disconnect handler registered")
     }
 
     ; Start listening for messages if not in manual mode
     if (!host.isManualMode) {
         host.StartListening(100)  ; Check every 100ms
-        Log("Chrome Native Messaging Host started")
-        Log("Waiting for messages...")
+        Logger.Info("Chrome Native Messaging Host started")
+        Logger.Info("Waiting for messages...")
 
         ; Log registration status
         regStatusText := regHelper.IsRegistered()
             ? "Native messaging host is registered"
             : "Native messaging host is NOT registered - automatic connections from Chrome won't work"
 
-        Log(regStatusText)
+        Logger.Info(regStatusText)
     } else {
         ; Log manual mode
-        Log("Application started in MANUAL MODE")
-        Log("No Chrome connection - running standalone")
+        Logger.Info("Application started in MANUAL MODE")
+        Logger.Info("No Chrome connection - running standalone")
     }
 
     ; Initialize UI elements with loaded settings
-    Log("Initializing UI elements with loaded settings...")
+    Logger.Info("Initializing UI elements with loaded settings...")
     gui.InitializeUIFromSettings()
 
     ; If region always visible is enabled, show the region
     if (isRegionAlwaysVisible && RegionHandler.skipRegion.active) {
-        Log("Showing always-visible region overlay...")
+        Logger.Info("Showing always-visible region overlay...")
         RegionHandler.ShowRegionOverlay()
     }
 
-    Log("Initialization complete!")
+    Logger.Info("Initialization complete!")
 }
 
 ; Function to update a setting in a more reliable way

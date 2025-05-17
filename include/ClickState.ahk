@@ -23,7 +23,7 @@ class ClickState {
         ClickState_CurrentType := clickType
         ClickState_CurrentId += 1
 
-        Log("ClickState: Started " . clickType . " click operation with ID " . ClickState_CurrentId)
+        Logger.Info("ClickState: Started " . clickType . " click operation with ID " . ClickState_CurrentId)
         return ClickState_CurrentId        ; Return ID of the current click operation
     }
 
@@ -35,9 +35,9 @@ class ClickState {
         if (clickId == ClickState_CurrentId) {
             ClickState_IsInProgress := false
             ClickState_CurrentType := ""
-            Log("ClickState: Ended click operation with ID " . clickId)
+            Logger.Info("ClickState: Ended click operation with ID " . clickId)
         } else {
-            Log("ClickState: Ignored EndClick for outdated operation ID " . clickId . " (current is " . ClickState_CurrentId . ")")
+            Logger.Debug("ClickState: Ignored EndClick for outdated operation ID " . clickId . " (current is " . ClickState_CurrentId . ")")
         }
     }
 
@@ -52,9 +52,9 @@ class ClickState {
         static lastLogTime := 0
         if (shouldCancel && (A_TickCount - lastLogTime > 500)) {
             if (ClickState_CurrentId != clickId) {
-                Log("ClickState: Operation " . clickId . " should cancel - operation is outdated (current is " . ClickState_CurrentId . ")")
+                Logger.Debug("ClickState: Operation " . clickId . " should cancel - operation is outdated (current is " . ClickState_CurrentId . ")")
             } else {
-                Log("ClickState: Operation " . clickId . " should cancel - explicit cancellation flag set")
+                Logger.Debug("ClickState: Operation " . clickId . " should cancel - explicit cancellation flag set")
             }
             lastLogTime := A_TickCount
         }
@@ -69,7 +69,7 @@ class ClickState {
 
         if (ClickState_IsInProgress) {
             ClickState_ShouldCancel := true
-            Log("ClickState: Cancelling current click operation (" . ClickState_CurrentType . " with ID " . ClickState_CurrentId . ") - Reason: " . reason)
+            Logger.Info("ClickState: Cancelling current click operation (" . ClickState_CurrentType . " with ID " . ClickState_CurrentId . ") - Reason: " . reason)
             return true
         }
         return false

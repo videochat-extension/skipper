@@ -10,7 +10,7 @@ class TooltipManager {
     ; Initialize the tooltip system
     static Initialize(showHints := true) {
         this.showTooltipHints := showHints
-        Log("TooltipManager initialized. Hints enabled: " . this.showTooltipHints)
+        Logger.Info("TooltipManager initialized. Hints enabled: " . this.showTooltipHints)
     }
 
     ; Set whether tooltips should be shown
@@ -19,7 +19,7 @@ class TooltipManager {
         if (!enabled) {
             this.ClearTooltip()
         }
-        Log("Tooltips " . (enabled ? "enabled" : "disabled"))
+        Logger.Info("Tooltips " . (enabled ? "enabled" : "disabled"))
     }
 
     ; Show a tooltip with the specified parameters

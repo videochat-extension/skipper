@@ -60,8 +60,8 @@ class MessagingHostGUI {
         this.StatusBar := this.MainGui.Add("StatusBar")
         this.UpdateStatusBar()
 
-        ; Create tabs
-        this.TabsControl := this.MainGui.Add("Tab3", "w460 h495", ["Clicker", "Log", "About"])
+        ; Create tabs - removed Log tab
+        this.TabsControl := this.MainGui.Add("Tab3", "w460 h495", ["Clicker", "About"])
 
         ; ================ CLICKER TAB ================
         this.TabsControl.UseTab(1)
@@ -167,14 +167,8 @@ class MessagingHostGUI {
         ; Use Edit control with readonly and scrollbars instead of Text control
         this.MainGui.Add("Edit", "x30 y370 w420 h125 +ReadOnly +Multi +VScroll", instructionsText)
 
-        ; ================ LOG TAB ================
-        this.TabsControl.UseTab(2)
-
-        this.LogEdit := this.MainGui.Add("Edit", "x15 y45 w450 h455 +Multi +ReadOnly +VScroll +WantReturn", "")
-        this.LogEdit.Value := "Logging is temporarily disabled"
-
         ; ================ ABOUT & FEEDBACK TAB ================
-        this.TabsControl.UseTab(3)
+        this.TabsControl.UseTab(2)
 
         ; Using the same consistent y40 starting position
         this.MainGui.Add("GroupBox", "x15 y40 w450 h145", "About " . AppName)
@@ -215,7 +209,7 @@ class MessagingHostGUI {
         if (RegionHandler.skipRegion.active) {
             ; Show minimized since region is already defined
             this.MainGui.Show("w480 h530 Minimize")
-            this.UpdateLog("Started minimized - skip region already configured")
+            Logger.Info("Started minimized - skip region already configured")
 
             ; Mark as launched minimized for redraw handling
             this.wasLaunchedMinimized := true
@@ -231,9 +225,9 @@ class MessagingHostGUI {
         ; Display registration status
         if (this.regHelper) {
             if (this.regHelper.IsRegistered()) {
-                this.UpdateLog("✓ Native messaging host is registered with Chrome")
+                Logger.Info("✓ Native messaging host is registered with Chrome")
             } else {
-                this.UpdateLog("⚠️ Registration status could not be confirmed")
+                Logger.Warn("⚠️ Registration status could not be confirmed")
             }
         }
 
@@ -292,7 +286,7 @@ class MessagingHostGUI {
     ToggleRegionAlwaysVisible(*) {
         isAlwaysVisible := this.regionAlwaysVisibleCb.Value
         UpdateSetting("isRegionAlwaysVisible", isAlwaysVisible)
-        Log("Always show region " . (isAlwaysVisible ? "enabled" : "disabled"))
+        Logger.Info("Always show region " . (isAlwaysVisible ? "enabled" : "disabled"))
     }
 
     ; Start the region selection process for the skip button
@@ -318,49 +312,49 @@ class MessagingHostGUI {
     ToggleSkipDoubleClick(*) {
         isDoubleClick := this.skipDoubleClickCb.Value
         UpdateSetting("isSkipDoubleClicked", isDoubleClick)
-        Log("Skip double-click " . (isDoubleClick ? "enabled" : "disabled"))
+        Logger.Info("Skip double-click " . (isDoubleClick ? "enabled" : "disabled"))
     }
 
     ; Toggle left arrow key block
     ToggleLeftArrowBlock(*) {
         isBlocked := this.leftArrowCb.Value
         UpdateSetting("isLeftArrowBlocked", isBlocked)
-        Log("Left arrow key " . (isBlocked ? "blocked" : "unblocked"))
+        Logger.Info("Left arrow key " . (isBlocked ? "blocked" : "unblocked"))
     }
 
     ; Toggle right arrow key block
     ToggleRightArrowBlock(*) {
         isBlocked := this.rightArrowCb.Value
         UpdateSetting("isRightArrowBlocked", isBlocked)
-        Log("Right arrow key " . (isBlocked ? "blocked" : "unblocked"))
+        Logger.Info("Right arrow key " . (isBlocked ? "blocked" : "unblocked"))
     }
 
     ; Toggle up arrow key block
     ToggleUpArrowBlock(*) {
         isBlocked := this.upArrowCb.Value
         UpdateSetting("isUpArrowBlocked", isBlocked)
-        Log("Up arrow key " . (isBlocked ? "blocked" : "unblocked"))
+        Logger.Info("Up arrow key " . (isBlocked ? "blocked" : "unblocked"))
     }
 
     ; Toggle down arrow key block
     ToggleDownArrowBlock(*) {
         isBlocked := this.downArrowCb.Value
         UpdateSetting("isDownArrowBlocked", isBlocked)
-        Log("Down arrow key " . (isBlocked ? "blocked" : "unblocked"))
+        Logger.Info("Down arrow key " . (isBlocked ? "blocked" : "unblocked"))
     }
 
     ; Toggle emergency shutdown
     ToggleEmergencyShutdown(*) {
         isShutdown := this.emergencyShutdownCb.Value
         UpdateSetting("isEmergencyShutdownEnabled", isShutdown)
-        Log("Emergency shutdown " . (isShutdown ? "enabled" : "disabled"))
+        Logger.Info("Emergency shutdown " . (isShutdown ? "enabled" : "disabled"))
     }
 
     ; Toggle skipper enabled option
     ToggleSkipperEnabled(*) {
         isSuppressed := this.skipperEnabledCb.Value
         UpdateSetting("isSkipperSuppressed", isSuppressed)
-        Log("Skipper functionality " . (isSuppressed ? "disabled" : "enabled"))
+        Logger.Info("Skipper functionality " . (isSuppressed ? "disabled" : "enabled"))
 
         ; Update UI controls based on suppressed state
         this.UpdateControlsEnabledState(isSuppressed)
@@ -413,7 +407,7 @@ class MessagingHostGUI {
     UpdateRegionTransparency(*) {
         transparency := this.transparencySlider.Value
         UpdateSetting("regionTransparency", transparency)
-        Log("Region transparency set to " . transparency)
+        Logger.Info("Region transparency set to " . transparency)
     }
 
     ; Update the status bar with Chrome connection status
@@ -428,35 +422,10 @@ class MessagingHostGUI {
         }
     }
 
-    ; Update the log display
-    UpdateLog(text) {
-        ; Skip empty messages
-        ; disable logging for now
-        if (true || text = "")
-            return
-
-        ; Add timestamp to log entry
-        timestamp := FormatTime(, "yyyy-MM-dd HH:mm:ss")
-        this.guiLog .= timestamp . " | " . text . "`r`n"
-
-        ; Update the edit control if it exists
-        if (this.LogEdit) {
-            ; Check if GUI exists first
-            if (WinExist("ahk_id " . this.MainGui.Hwnd)) {
-                this.LogEdit.Value := this.guiLog
-
-                ; Auto-scroll to bottom using SendMessage
-                DllCall("SendMessage", "Ptr", this.LogEdit.Hwnd, "UInt", 0x115, "Ptr", 7, "Ptr", 0)
-            }
-        }
-    }
-
     ; Log a disconnection event
     LogDisconnection(*) {
-        this.UpdateLog("!!! Chrome Native Messaging connection closed !!!")
-        this.UpdateLog("Application will exit soon...")
-
-        ; MsgBox("Chrome connection closed. Application will exit.", "Connection Closed", "T2 Icon!")
+        Logger.Warn("!!! Chrome Native Messaging connection closed !!!")
+        Logger.Warn("Application will exit soon...")
     }
 
     ; Show a warning about manual mode
@@ -530,10 +499,10 @@ class MessagingHostGUI {
     OpenExtensionInstallPage(ownerGui) {
         try {
             Run("https://vext.omeglelike.com/install")
-            this.UpdateLog("Opened Videochat Extension installation page")
+            Logger.Info("Opened Videochat Extension installation page")
             ownerGui.Destroy()
         } catch Error as e {
-            this.UpdateLog("Error opening extension installation page: " e.Message)
+            Logger.Error("Error opening extension installation page: " e.Message)
             MsgBox("Failed to open website. Please visit https://vext.omeglelike.com/install manually.", "Error", "Icon!")
         }
     }
@@ -578,7 +547,7 @@ class MessagingHostGUI {
         urlsGui.OnEvent("Close", (*) => urlsGui.Destroy())
         urlsGui.Show("w430 h220")
 
-        this.UpdateLog("Showed extension configuration dialog")
+        Logger.Info("Showed extension configuration dialog")
     }
 
     ; Helper to select all text in an edit control
@@ -612,16 +581,18 @@ class MessagingHostGUI {
         if (wParam = 0xF120) {
             ; Only process this if we started minimized and haven't fixed it yet
             if (this.wasLaunchedMinimized && !this.redrawAlreadyPerformed) {
-                this.UpdateLog("Performing scheduled redraw after restore")
+                Logger.Info("Performing scheduled redraw after restore")
 
-                this.TabsControl.Value := 2
+                ; Just trigger a tab switch to force a redraw
+                ; Since we removed the Log tab, we need to adjust the tab switching code
+                this.TabsControl.Value := 2  ; Switch to About tab
 
-                this.TabsControl.Value := 1
+                this.TabsControl.Value := 1  ; Switch back to Clicker tab
 
                 ; Mark that we've performed the redraw
                 this.redrawAlreadyPerformed := true
 
-                this.UpdateLog("Tab rendering should be fixed now")
+                Logger.Info("Tab rendering should be fixed now")
             }
         }
     }
@@ -652,7 +623,7 @@ class MessagingHostGUI {
                 RegionHandler.UpdateRegionColor(newColor)
             }
 
-            this.UpdateLog("Region color set to: " . newColor)
+            Logger.Info("Region color set to: " . newColor)
         }
     }
 
@@ -660,7 +631,7 @@ class MessagingHostGUI {
     ToggleOption1(*) {
         isEnabled := this.option1Cb.Value
         UpdateSetting("showRegionText", isEnabled)
-        Log("Region overlay text " . (isEnabled ? "enabled" : "disabled"))
+        Logger.Info("Region overlay text " . (isEnabled ? "enabled" : "disabled"))
 
         ; Refresh the region overlay to apply text change
         global isRegionAlwaysVisible
@@ -673,6 +644,6 @@ class MessagingHostGUI {
     ToggleOption2(*) {
         isEnabled := this.option2Cb.Value
         UpdateSetting("showTooltipHints", isEnabled)
-        Log("Tooltip hints " . (isEnabled ? "enabled" : "disabled"))
+        Logger.Info("Tooltip hints " . (isEnabled ? "enabled" : "disabled"))
     }
 }

@@ -19,14 +19,14 @@ class NativeMessagingHost {
 
         ; Detect if we're in manual mode (not launched by Chrome)
         this.isManualMode := this.DetectManualMode()
-        Log("NativeMessagingHost created. Manual mode: " . (this.isManualMode ? "Yes" : "No"))
+        Logger.Info("NativeMessagingHost created. Manual mode: " . (this.isManualMode ? "Yes" : "No"))
     }
 
     ; Detect if the application was launched manually rather than by Chrome
     DetectManualMode() {
         ; Check if stdin handle is valid and has expected properties
         if (this.hStdIn = 0 || this.hStdIn = -1) {
-            Log("Invalid stdin handle detected. Assuming manual mode.")
+            Logger.Info("Invalid stdin handle detected. Assuming manual mode.")
             return true  ; Invalid handle - manual mode
         }
 
@@ -37,19 +37,19 @@ class NativeMessagingHost {
         ; If pipe peek fails, we're in manual mode
         if (!result) {
             errorCode := DllCall("GetLastError")
-            Log("PeekNamedPipe failed with error code: " . errorCode . ". Assuming manual mode.")
+            Logger.Info("PeekNamedPipe failed with error code: " . errorCode . ". Assuming manual mode.")
             ; ERROR_BROKEN_PIPE (109) or other pipe-related errors indicate we're not connected to Chrome
             return true
         }
 
         ; If we got here, the pipe is valid and we're likely launched by Chrome
-        Log("Valid pipe connection detected. Running in Chrome mode.")
+        Logger.Info("Valid pipe connection detected. Running in Chrome mode.")
         return false
     }
 
     ; Start listening for messages
     StartListening(interval := 100) {
-        Log("Starting message listener with interval: " . interval . "ms")
+        Logger.Info("Starting message listener with interval: " . interval . "ms")
         ; Create a timer that calls the CheckStdin method
         timer := ObjBindMethod(this, "CheckStdin")
         SetTimer(timer, interval)
@@ -57,7 +57,7 @@ class NativeMessagingHost {
 
     ; Stop listening for messages
     StopListening() {
-        Log("Stopping message listener")
+        Logger.Info("Stopping message listener")
         timer := ObjBindMethod(this, "CheckStdin")
         SetTimer(timer, 0)
     }
@@ -71,7 +71,7 @@ class NativeMessagingHost {
         ; If no data or error, return empty
         if (!result || bytesAvailable < 4) {
             if (!result) {
-                Log("PeekNamedPipe failed when checking for messages")
+                Logger.Error("PeekNamedPipe failed when checking for messages")
             }
             return ""
         }
@@ -82,22 +82,22 @@ class NativeMessagingHost {
         DllCall("ReadFile", "Ptr", this.hStdIn, "Ptr", lengthBuffer, "UInt", 4, "UInt*", &bytesRead, "Ptr", 0)
 
         if (bytesRead != 4) {
-            Log("Failed to read message length. Expected 4 bytes, got " . bytesRead)
+            Logger.Error("Failed to read message length. Expected 4 bytes, got " . bytesRead)
             return ""
         }
 
         messageLength := NumGet(lengthBuffer, 0, "UInt")
 
         if (!messageLength) {
-            Log("Received message with zero length")
+            Logger.Info("Received message with zero length")
             return ""
         }
 
-        Log("Preparing to read message of length: " . messageLength . " bytes")
+        Logger.Info("Preparing to read message of length: " . messageLength . " bytes")
 
         ; Check if the full message is available
         if (bytesAvailable < 4 + messageLength) {
-            Log("Full message not available yet. Available: " . bytesAvailable . ", Need: " . (4 + messageLength))
+            Logger.Info("Full message not available yet. Available: " . bytesAvailable . ", Need: " . (4 + messageLength))
             return ""
         }
 
@@ -106,18 +106,18 @@ class NativeMessagingHost {
         DllCall("ReadFile", "Ptr", this.hStdIn, "Ptr", messageBuffer, "UInt", messageLength, "UInt*", &bytesRead, "Ptr", 0)
 
         message := StrGet(messageBuffer, bytesRead, "UTF-8")
-        Log("Raw message received: " . (StrLen(message) > 100 ? SubStr(message, 1, 100) . "..." : message))
+        Logger.Info("Raw message received: " . (StrLen(message) > 100 ? SubStr(message, 1, 100) . "..." : message))
 
         ; Parse JSON with error handling
         try {
             ; Create a variable to pass by reference to Jxon_Load
             messageVar := message
             parsed := Jxon_Load(&messageVar)
-            Log("Successfully parsed JSON message")
+            Logger.Info("Successfully parsed JSON message")
             return parsed
         } catch Error as e {
             ; Log error and return the raw message string
-            Log("JSON parsing error: " . e.Message)
+            Logger.Error("JSON parsing error: " . e.Message)
             return message
         }
     }
@@ -128,18 +128,18 @@ class NativeMessagingHost {
             ; Try to encode the message content
             encodedContent := Jxon_Dump(messageContent)
             encodedLength := StrLen(encodedContent)
-            Log("Message encoded successfully. Length: " . encodedLength . " bytes")
+            Logger.Info("Message encoded successfully. Length: " . encodedLength . " bytes")
             return { length: encodedLength, content: encodedContent }
         } catch Error as e {
             ; If encoding fails, create a simple error message
-            Log("Failed to encode message: " . e.Message)
+            Logger.Error("Failed to encode message: " . e.Message)
             errorMsg := Map(
                 "error", true,
                 "message", "Failed to encode message: " . e.Message
             )
             encodedContent := Jxon_Dump(errorMsg)
             encodedLength := StrLen(encodedContent)
-            Log("Created error response instead. Length: " . encodedLength . " bytes")
+            Logger.Info("Created error response instead. Length: " . encodedLength . " bytes")
             return { length: encodedLength, content: encodedContent }
         }
     }
@@ -148,11 +148,11 @@ class NativeMessagingHost {
     SendMessage(messageContent) {
         ; If in manual mode, just log the message attempt but don't try to send
         if (this.isManualMode) {
-            Log("Manual mode: Not sending message to Chrome")
+            Logger.Info("Manual mode: Not sending message to Chrome")
             return 0
         }
 
-        Log("Preparing to send message to Chrome")
+        Logger.Info("Preparing to send message to Chrome")
 
         ; Normal message sending when connected to Chrome
         encodedMessage := this.EncodeMessage(messageContent)
@@ -164,7 +164,7 @@ class NativeMessagingHost {
         DllCall("WriteFile", "Ptr", this.hStdOut, "Ptr", lengthBuffer, "UInt", 4, "UInt*", &bytesWritten, "Ptr", 0)
 
         if (bytesWritten != 4) {
-            Log("Failed to write message length. Expected 4 bytes, wrote " . bytesWritten)
+            Logger.Error("Failed to write message length. Expected 4 bytes, wrote " . bytesWritten)
             return 0
         }
 
@@ -173,7 +173,7 @@ class NativeMessagingHost {
         StrPut(encodedMessage.content, contentBuffer, "UTF-8")
         DllCall("WriteFile", "Ptr", this.hStdOut, "Ptr", contentBuffer, "UInt", encodedMessage.length, "UInt*", &bytesWritten, "Ptr", 0)
 
-        Log("Message sent. Wrote " . bytesWritten . " of " . encodedMessage.length . " bytes")
+        Logger.Info("Message sent. Wrote " . bytesWritten . " of " . encodedMessage.length . " bytes")
         return bytesWritten
     }
 
@@ -197,7 +197,7 @@ class NativeMessagingHost {
             this.isDisconnecting := true
 
             ; Log disconnection and exit
-            Log("Native messaging pipe closed. Chrome connection lost. Exiting application.")
+            Logger.Warn("Native messaging pipe closed. Chrome connection lost. Exiting application.")
             this.StopListening()
 
             ; If we have an onDisconnect callback, call it first
@@ -205,7 +205,7 @@ class NativeMessagingHost {
                 this.onDisconnect.Call()
 
             ; Exit after a short delay to allow logs to be written
-            Log("Application will exit in 500ms")
+            Logger.Info("Application will exit in 500ms")
             SetTimer(() => ExitApp(), -500)
             return
         }
@@ -218,10 +218,10 @@ class NativeMessagingHost {
         if (receivedMessage != "") {
             ; Call the callback if defined
             if (this.onMessageCallback && IsObject(this.onMessageCallback)) {
-                Log("Calling message callback handler")
+                Logger.Info("Calling message callback handler")
                 this.onMessageCallback.Call(receivedMessage)
             } else {
-                Log("No message callback handler defined")
+                Logger.Info("No message callback handler defined")
             }
         }
     }
