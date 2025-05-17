@@ -42,57 +42,19 @@ class TooltipManager {
             this.currentTimer := 0
         }
 
-        ; Create the tooltip GUI if it doesn't exist, otherwise update it
-        if (!this.tooltipGui) {
-            ; Create new tooltip GUI
-            this.tooltipGui := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x20")  ; E0x20 makes it click-through
-            this.tooltipGui.BackColor := bgColor
-            this.tooltipGui.SetFont("s10 c" . textColor, "Segoe UI")
-            this.tooltipGui.Add("Text", "Background" . bgColor, text)
-            this.tooltipGui.Opt("AlwaysOnTop")
-            WinSetTransparent(transparency, this.tooltipGui)
-            this.tooltipGui.Show("AutoSize x" . x . " y" . y . " NoActivate")
-            this.tooltipVisible := true
-        } else {
-            ; Update existing tooltip
-            try {
-                ; First hide the GUI to avoid flickering
-                if (this.tooltipVisible) {
-                    this.tooltipGui.Hide()
-                }
-                
-                ; Update tooltip properties
-                this.tooltipGui.BackColor := bgColor
-                
-                ; Remove any existing controls
-                for ctrl in this.tooltipGui {
-                    ctrl.Destroy()
-                }
-                
-                ; Add new text
-                this.tooltipGui.SetFont("s10 c" . textColor, "Segoe UI")
-                this.tooltipGui.Add("Text", "Background" . bgColor, text)
-                
-                ; Show tooltip at new position
-                this.tooltipGui.Show("AutoSize x" . x . " y" . y . " NoActivate")
-                WinSetTransparent(transparency, this.tooltipGui)
-                this.tooltipVisible := true
-            } catch Error as e {
-                ; If updating fails, recreate the tooltip
-                if (this.tooltipGui) {
-                    this.tooltipGui.Destroy()
-                }
-                
-                this.tooltipGui := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x20")
-                this.tooltipGui.BackColor := bgColor
-                this.tooltipGui.SetFont("s10 c" . textColor, "Segoe UI")
-                this.tooltipGui.Add("Text", "Background" . bgColor, text)
-                this.tooltipGui.Opt("AlwaysOnTop")
-                WinSetTransparent(transparency, this.tooltipGui)
-                this.tooltipGui.Show("AutoSize x" . x . " y" . y . " NoActivate")
-                this.tooltipVisible := true
-            }
+        if (this.tooltipGui) {
+            this.tooltipGui.Destroy()
         }
+        
+        ; Create new tooltip GUI
+        this.tooltipGui := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x20")  ; E0x20 makes it click-through
+        this.tooltipGui.BackColor := bgColor
+        this.tooltipGui.SetFont("s10 c" . textColor, "Segoe UI")
+        this.tooltipGui.Add("Text", "Background" . bgColor, text)
+        this.tooltipGui.Opt("AlwaysOnTop")
+        WinSetTransparent(transparency, this.tooltipGui)
+        this.tooltipGui.Show("AutoSize x" . x . " y" . y . " NoActivate")
+        this.tooltipVisible := true
 
         ; Create a new timer to hide the tooltip after specified timeout
         hideFn := ObjBindMethod(this, "HideTooltip")
