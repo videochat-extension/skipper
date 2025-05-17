@@ -2,10 +2,6 @@
 class MessagingHostGUI {
     ; GUI components
     MainGui := ""
-    LogEdit := ""
-    guiLog := ""
-    logEntryCount := 0  ; Track number of log entries
-    maxLogEntries := 100  ; Maximum number of log entries to keep
     StatusBar := ""
     TabsControl := ""  ; Store tabs control as class property
 
@@ -20,8 +16,6 @@ class MessagingHostGUI {
     skipperEnabledCb := ""  ; Component for enabling/disabling skipper functionality
     transparencySlider := ""  ; Slider for region overlay transparency
     transparencyText := ""    ; Text for transparency label
-    regionColorBtn := ""      ; Button for region color selection
-    regionColorText := ""     ; Text to display current color
     option1Cb := ""          ; New checkbox 1
     option2Cb := ""          ; New checkbox 2
 
@@ -317,26 +311,6 @@ class MessagingHostGUI {
             this.skipRegionText.Text := "Skip button region defined"
         } else {
             this.skipRegionText.Text := "No region selected. Please define a region for the Skip button."
-        }
-    }
-
-    ; Test the click functionality
-    TestClick(clickType, *) {
-        this.UpdateLog("Testing " . clickType . " click...")
-
-        ; Get the appropriate double-click setting
-        useDoubleClick := false
-        if (clickType = "skip") {
-            useDoubleClick := this.skipDoubleClickCb.Value
-        }
-
-        ; Perform the click operation
-        result := ClickHandler.PerformClick(clickType, useDoubleClick)
-
-        if (result) {
-            this.UpdateLog("Test " . clickType . " click successful")
-        } else {
-            this.UpdateLog("Test " . clickType . " click failed - cursor may not be in region")
         }
     }
 
