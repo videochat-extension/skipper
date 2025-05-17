@@ -18,10 +18,10 @@ CheckForUpdates(silent := true)
         ; Get status code
         statusCode := http.Status
         if (statusCode != 200) {
-            manualUrl := "https://skipper.omeglelike.com/latest"
+            manualUrl := URL_MANUAL_UPDATE
             if (ShowErrorWithLink("Failed to check for updates. HTTP Status: " statusCode "`n`nCurrent version: " AppVersion "`n`n"
                 . "Would you like to check for updates manually?",
-                "https://pastebin.com/embed_iframe/sfG3zvRT", "If something is VERY wrong, check this link.") = "Yes")
+                URL_EMERGENCY_TROUBLESHOOTING, "If something is VERY wrong, check this link.") = "Yes")
                 Run "explorer.exe " manualUrl
             return
         }
@@ -84,10 +84,10 @@ CheckForUpdates(silent := true)
             MsgBox("You are running the latest version (" AppVersion ").", "No Updates Available")
         }
     } catch Error as e {
-        manualUrl := "https://skipper.omeglelike.com/latest"
+        manualUrl := URL_MANUAL_UPDATE
         if (ShowErrorWithLink("Error: " e.Message "`n`nCurrent version: " AppVersion "`n`n"
             . "Would you like to check for updates manually?",
-            "https://pastebin.com/embed_iframe/sfG3zvRT", "If something is VERY wrong, check this link.") = "Yes")
+            URL_EMERGENCY_TROUBLESHOOTING, "If something is VERY wrong, check this link.") = "Yes")
             Run "explorer.exe " manualUrl
     }
 }
@@ -202,7 +202,7 @@ ShowUpdateWithLink(message, linkUrl, linkText) {
     linkCtrl.GetPos(&linkX, &linkY, &linkWidth, &linkHeight)
     
     ; Add backup link for emergency cases
-    backupLinkCtrl := updateGui.Add("Link", "w320 y+10 -Tabstop", '<a href="https://pastebin.com/embed_iframe/sfG3zvRT">If something is VERY wrong, check this link.</a>')
+    backupLinkCtrl := updateGui.Add("Link", "w320 y+10 -Tabstop", '<a href="' URL_EMERGENCY_TROUBLESHOOTING '">If something is VERY wrong, check this link.</a>')
     backupLinkCtrl.GetPos(&backupLinkX, &backupLinkY, &backupLinkWidth, &backupLinkHeight)
 
     ; Calculate button position - ensure they're below the text with proper spacing
@@ -235,7 +235,7 @@ ShowUpdateWithLink(message, linkUrl, linkText) {
 
     ; Add event for clickable link - open in browser when clicked
     linkCtrl.OnEvent("Click", (*) => Run("explorer.exe " linkUrl))
-    backupLinkCtrl.OnEvent("Click", (*) => Run("explorer.exe https://pastebin.com/embed_iframe/sfG3zvRT"))
+    backupLinkCtrl.OnEvent("Click", (*) => Run("explorer.exe " URL_EMERGENCY_TROUBLESHOOTING))
 
     ; Show dialog with dynamically calculated height and centered on screen
     updateGui.Show("w" dialogWidth " h" windowHeight " Center")

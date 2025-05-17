@@ -29,6 +29,14 @@ global AppName := "OmegleLike Skipper"
 global RepoOwner := "videochat-extension"
 global RepoName := "skipper"
 
+; URL Constants
+global URL_FEEDBACK_FORM := "https://skipper.omeglelike.com/feedback"
+global URL_EXTENSION_INSTALL := "https://vext.omeglelike.com/install"
+global URL_PROJECT_HOMEPAGE := "https://skipper.omeglelike.com"
+global URL_OMEGLE_DIRECTORY := "https://omeglelike.com"
+global URL_MANUAL_UPDATE := "https://skipper.omeglelike.com/latest"
+global URL_EMERGENCY_TROUBLESHOOTING := "https://pastebin.com/embed_iframe/sfG3zvRT"
+
 ; Set coordinate mode to screen (absolute) for mouse operations
 CoordMode("Mouse", "Screen")  ; Use absolute screen coordinates
 CoordMode("ToolTip", "Screen")  ; Also set ToolTips to use screen coordinates

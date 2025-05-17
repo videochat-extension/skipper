@@ -471,7 +471,7 @@ class MessagingHostGUI {
         manualBtn.OnEvent("Click", (*) => manualModeGui.Destroy())
 
         ; Add instruction text for manual mode as a clickable link
-        manualModeGui.Add("Link", "w450 y+15", 'Manual Mode works too! <a href="https://pastebin.com/embed_iframe/sfG3zvRT">If something is VERY wrong, check this link.</a>')
+        manualModeGui.Add("Link", "w450 y+15", 'Manual Mode works too! <a href="' URL_EMERGENCY_TROUBLESHOOTING '">If something is VERY wrong, check this link.</a>')
 
         ; Set up handler for X button - exit the application
         manualModeGui.OnEvent("Close", (*) => ExitApp())
@@ -498,12 +498,12 @@ class MessagingHostGUI {
     ; Open the extension installation page
     OpenExtensionInstallPage(ownerGui) {
         try {
-            Run("https://vext.omeglelike.com/install")
+            Run(URL_EXTENSION_INSTALL)
             Logger.Info("Opened Videochat Extension installation page")
             ownerGui.Destroy()
         } catch Error as e {
             Logger.Error("Error opening extension installation page: " e.Message)
-            MsgBox("Failed to open website. Please visit https://vext.omeglelike.com/install manually.", "Error", "Icon!")
+            MsgBox("Failed to open website. Please visit " URL_EXTENSION_INSTALL " manually.", "Error", "Icon!")
         }
     }
 
@@ -558,17 +558,17 @@ class MessagingHostGUI {
 
     ; Open the project homepage
     OpenHomepage(*) {
-        Run("https://skipper.videochat.tools")
+        Run(URL_PROJECT_HOMEPAGE)
     }
 
     ; Open the directory of Omegle clones
     OpenDirectory(*) {
-        Run("https://videochat.tools")
+        Run(URL_OMEGLE_DIRECTORY)
     }
 
     ; Open the feedback form
     OpenFeedbackForm(*) {
-        Run("https://forms.gle/c9WPBvTQtPuVqz449")
+        Run(URL_FEEDBACK_FORM)
     }
 
     ; Handler for system commands - used to detect unminimize
