@@ -22,67 +22,6 @@ global rightKeyCancelledAction := false
 global upKeyCancelledAction := false
 global downKeyCancelledAction := false
 
-; Transparent tooltip GUI references
-global tooltipGui := Map()
-global tooltipTimer := Map()
-global activeTooltipId := 0  ; Track the currently active tooltip ID
-
-; Function to clear all transparent tooltips
-ClearTooltips() {
-    global tooltipGui, tooltipTimer, activeTooltipId
-    for id, gui in tooltipGui {
-        if (gui) {
-            try {
-                gui.Destroy()
-            }
-        }
-    }
-    tooltipGui := Map()
-    tooltipTimer := Map()
-    activeTooltipId := 0  ; Reset active tooltip ID
-}
-
-; Function to create transparent, click-through tooltips that don't steal focus
-TransparentToolTip(text, x := "", y := "", id := 1, timeout := 3000, bgColor := "222222", textColor := "FFFFFF", transparency := 200) {
-    global tooltipGui, tooltipTimer, activeTooltipId, showTooltipHints
-
-    ; Check if tooltips are disabled via Option 2
-    if (IsSet(showTooltipHints) && !showTooltipHints) {
-        ; Tooltips are disabled, return early
-        return
-    }
-
-    ; Clear any existing tooltip regardless of ID to ensure only one tooltip at a time
-    ClearTooltips()
-
-    ; Create tooltip GUI
-    tooltipGui[id] := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x20")  ; E0x20 makes it click-through
-    tooltipGui[id].BackColor := bgColor
-    tooltipGui[id].SetFont("s10 c" . textColor, "Segoe UI")
-    tooltipGui[id].Add("Text", "Background" . bgColor, text)
-
-    ; Calculate position if not provided
-    if (x = "" || y = "") {
-        MouseGetPos(&mouseX, &mouseY)
-        x := (x = "") ? mouseX + 20 : x
-        y := (y = "") ? mouseY + 20 : y
-    }
-
-    ; Apply transparency and show the tooltip at specified position
-    tooltipGui[id].Opt("AlwaysOnTop")
-    WinSetTransparent(transparency, tooltipGui[id])
-    tooltipGui[id].Show("AutoSize x" . x . " y" . y . " NoActivate")
-
-    ; Create timer function to destroy the tooltip
-    tooltipTimer[id] := ObjBindMethod(tooltipGui[id], "Destroy")
-    SetTimer(tooltipTimer[id], -timeout)
-
-    ; Update active tooltip ID
-    activeTooltipId := id
-
-    return tooltipGui[id]
-}
-
 ; Function to process arrow key actions asynchronously
 ProcessArrowAction(actionType, key, clickType, useDoubleClick) {
     global pendingCancellation, activeActionType, cancelledByKey, cancelledActionType
@@ -112,7 +51,7 @@ ProcessArrowAction(actionType, key, clickType, useDoubleClick) {
         ; Get current mouse position for the tooltip
         MouseGetPos(&mouseX, &mouseY)
         ; Show tooltip guiding user to define region first
-        TransparentToolTip("Please define a skip region first!`nClick the 'Define Skip Region' button.", mouseX + 20, mouseY - 40, 3, 3000, "993333", "FFFFFF", 230)
+        TooltipManager.Show("Please define a skip region first!`nClick the 'Define Skip Region' button.", mouseX + 20, mouseY - 40, 3000, "993333", "FFFFFF", 230)
         ; Clear state variables
         pendingCancellation := false
         cancelledByKey := ""
@@ -149,8 +88,8 @@ ProcessArrowAction(actionType, key, clickType, useDoubleClick) {
 
         if (!inRegion) {
             Log("Mouse is not in the skip region. Move mouse to the region first.")
-            TransparentToolTip("Move mouse to the skip button region first", mouseX + 20, mouseY + 20)
-            ; No need for a separate timer as the TransparentToolTip function handles auto-hiding
+            TooltipManager.Show("Move mouse to the skip button region first", mouseX + 20, mouseY + 20)
+            ; No need for a separate timer as the TooltipManager handles auto-hiding
 
             ; Clean up
             ClickState.EndClick(currentTaskId)
@@ -173,7 +112,7 @@ ProcessArrowAction(actionType, key, clickType, useDoubleClick) {
 
         ; Show a tooltip for successful skip
         if (clickType = "skip") {
-            TransparentToolTip("SKIP!", endX + 30, endY - 30, 2, 1000, "339933", "FFFFFF", 230)
+            TooltipManager.Show("SKIP!", endX + 30, endY - 30, 1000, "339933", "FFFFFF", 230)
         }
 
         ; Notify through messaging host if available
@@ -271,7 +210,7 @@ Left Up::  ; Left arrow key handler
             ; Get mouse position for tooltip
             MouseGetPos(&mouseX, &mouseY)
             ; Show tooltip indicating cancellation by long press
-            TransparentToolTip("Left arrow action cancelled - key held too long", mouseX + 20, mouseY - 40, 3, 2000, "333399", "FFFFFF", 220)
+            TooltipManager.Show("Left arrow action cancelled - key held too long", mouseX + 20, mouseY - 40, 2000, "333399", "FFFFFF", 220)
             return
         }
 
@@ -365,7 +304,7 @@ Right Up::  ; Right arrow key handler
             ; Get mouse position for tooltip
             MouseGetPos(&mouseX, &mouseY)
             ; Show tooltip indicating cancellation by long press
-            TransparentToolTip("Right arrow action cancelled - key held too long", mouseX + 20, mouseY - 40, 3, 2000, "333399", "FFFFFF", 220)
+            TooltipManager.Show("Right arrow action cancelled - key held too long", mouseX + 20, mouseY - 40, 2000, "333399", "FFFFFF", 220)
             return
         }
 
@@ -402,9 +341,9 @@ Right Up::  ; Right arrow key handler
             ; Show tooltip for toggle action
             MouseGetPos(&mouseX, &mouseY)
             if (isEmergencyShutdownEnabled) {
-                TransparentToolTip("Skipper " . (isSkipperSuppressed ? "DISABLED" : "ENABLED") . ", right arrow still blocked, hold + release right arrow for 1 second to exit", mouseX + 20, mouseY - 40, 4, 1500, isSkipperSuppressed ? "993333" : "339933", "FFFFFF", 230)
+                TooltipManager.Show("Skipper " . (isSkipperSuppressed ? "DISABLED" : "ENABLED") . ", right arrow still blocked, hold + release right arrow for 1 second to exit", mouseX + 20, mouseY - 40, 1500, isSkipperSuppressed ? "993333" : "339933", "FFFFFF", 230)
             } else {
-                TransparentToolTip("Skipper " . (isSkipperSuppressed ? "DISABLED" : "ENABLED") . ", right arrow still blocked, press to toggle.", mouseX + 20, mouseY - 40, 4, 1500, isSkipperSuppressed ? "993333" : "339933", "FFFFFF", 230)
+                TooltipManager.Show("Skipper " . (isSkipperSuppressed ? "DISABLED" : "ENABLED") . ", right arrow still blocked, press to toggle.", mouseX + 20, mouseY - 40, 1500, isSkipperSuppressed ? "993333" : "339933", "FFFFFF", 230)
             }
             ; Notify through messaging host if available
             global host
@@ -505,7 +444,7 @@ Up Up::  ; Up arrow key handler
             ; Get mouse position for tooltip
             MouseGetPos(&mouseX, &mouseY)
             ; Show tooltip indicating cancellation by long press
-            TransparentToolTip("Up arrow action cancelled - key held too long", mouseX + 20, mouseY - 40, 3, 2000, "333399", "FFFFFF", 220)
+            TooltipManager.Show("Up arrow action cancelled - key held too long", mouseX + 20, mouseY - 40, 2000, "333399", "FFFFFF", 220)
             return
         }
 
@@ -535,7 +474,7 @@ Up Up::  ; Up arrow key handler
 
                 ; Show tooltip for blacklist+skip action
                 MouseGetPos(&mouseX, &mouseY)
-                TransparentToolTip("BLACKLISTED + SKIP!", mouseX + 20, mouseY - 40, 5, 1500, "992200", "FFFFFF", 230)
+                TooltipManager.Show("BLACKLISTED + SKIP!", mouseX + 20, mouseY - 40, 1500, "992200", "FFFFFF", 230)
             } catch Error as e {
                 Log("Failed to send up arrow blacklist notification: " . e.Message)
             }
@@ -599,7 +538,7 @@ Down Up::  ; Down arrow key handler
             ; Get mouse position for tooltip
             MouseGetPos(&mouseX, &mouseY)
             ; Show tooltip indicating cancellation by long press
-            TransparentToolTip("Down arrow action cancelled - key held too long", mouseX + 20, mouseY - 40, 3, 2000, "333399", "FFFFFF", 220)
+            TooltipManager.Show("Down arrow action cancelled - key held too long", mouseX + 20, mouseY - 40, 2000, "333399", "FFFFFF", 220)
             return
         }
 
@@ -625,7 +564,7 @@ Down Up::  ; Down arrow key handler
 
             ; Show tooltip for blacklist-only action
             MouseGetPos(&mouseX, &mouseY)
-            TransparentToolTip("BAN/UNBAN", mouseX + 20, mouseY - 40, 5, 1500, "992200", "FFFFFF", 230)
+            TooltipManager.Show("BAN/UNBAN", mouseX + 20, mouseY - 40, 1500, "992200", "FFFFFF", 230)
         } catch Error as e {
             Log("Failed to send down arrow blacklist notification: " . e.Message)
         }

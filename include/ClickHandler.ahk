@@ -26,7 +26,7 @@ class ClickHandler {
         ; Check for cancellation before first click
         if (ClickState.ShouldCancel(clickId)) {
             Log("Cancelling click operation before first click")
-            TransparentToolTip("Click cancelled", startX + 20, startY + 20)
+            TooltipManager.Show("Click cancelled", startX + 20, startY + 20)
             return false
         }
 
@@ -36,7 +36,7 @@ class ClickHandler {
             Log("Mouse moved before click execution. Start: (" .
                 startX . "," . startY . "), Current: (" .
                 currentX . "," . currentY . "). Cancelling click.")
-            TransparentToolTip("Click cancelled - mouse moved", currentX + 20, currentY + 20)
+            TooltipManager.Show("Click cancelled - mouse moved", currentX + 20, currentY + 20)
             return false
         }
 
@@ -109,7 +109,7 @@ class ClickHandler {
             } else {
                 Log("Mouse is NOT within skip region. Current position (" . currentX . "," . currentY . "). Skipping click.")
                 ; Optionally display a tooltip to inform user
-                TransparentToolTip("Move mouse to the skip button region first", currentX + 20, currentY + 20)
+                TooltipManager.Show("Move mouse to the skip button region first", currentX + 20, currentY + 20)
                 clickResult := false
             }
         } else {

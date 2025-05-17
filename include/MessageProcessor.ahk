@@ -246,7 +246,7 @@ class MessageProcessor {
             if (!RegionHandler.IsMouseInSkipRegion()) {
                 this.gui.UpdateLog("Mouse is not in skip region (API check at " . apiMouseX . "," . apiMouseY . ") - cannot perform action")
                 ; Show tooltip guiding user to move mouse to the skip region
-                TransparentToolTip("Move mouse to the skip button region first", apiMouseX + 20, apiMouseY + 20, 3, 2000, "993333", "FFFFFF", 230)
+                TooltipManager.Show("Move mouse to the skip button region first", apiMouseX + 20, apiMouseY + 20, 2000, "993333", "FFFFFF", 230)
                 response := Map("type", "skipper", "status", "error", "message", "Mouse cursor is not in the skip region")
                 this.SendResponse(response)
                 return false
@@ -258,7 +258,7 @@ class MessageProcessor {
             ; Show a tooltip for successful skip, similar to Hotkeys.ahk
             if (result) {
                 MouseGetPos(&endX, &endY)
-                TransparentToolTip("SKIP!", endX + 30, endY - 30, 2, 1000, "339933", "FFFFFF", 230)
+                TooltipManager.Show("SKIP!", endX + 30, endY - 30, 1000, "339933", "FFFFFF", 230)
             }
             
             return result
@@ -292,7 +292,7 @@ class MessageProcessor {
                 ; Get current mouse position for the tooltip
                 MouseGetPos(&mouseX, &mouseY)
                 ; Show tooltip guiding user to define region first
-                TransparentToolTip("Please define a skip region first!`nClick the 'Define Skip Region' button.", mouseX + 20, mouseY - 40, 3, 3000, "993333", "FFFFFF", 230)
+                TooltipManager.Show("Please define a skip region first!`nClick the 'Define Skip Region' button.", mouseX + 20, mouseY - 40, 3000, "993333", "FFFFFF", 230)
                 return Map("success", false, "error", "Skip region not defined")
             }
 
@@ -315,7 +315,7 @@ class MessageProcessor {
             if (clickResult) {
                 MouseGetPos(&endX, &endY)
                 ; Show a tooltip for successful skip
-                TransparentToolTip("SKIP!", endX + 30, endY - 30, 2, 1000, "339933", "FFFFFF", 230)
+                TooltipManager.Show("SKIP!", endX + 30, endY - 30, 1000, "339933", "FFFFFF", 230)
                 return Map("success", true, "x", endX, "y", endY, "doubleClick", isSkipDoubleClicked)
             } else {
                 return Map("success", false, "error", "Skip action failed")

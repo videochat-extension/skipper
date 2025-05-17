@@ -84,7 +84,7 @@ class RegionHandler {
         MouseGetPos(&mouseX, &mouseY)
         this.lastMouseX := mouseX
         this.lastMouseY := mouseY
-        TransparentToolTip("Click and drag to select the region for " . regionType . " button.`nPress Esc to cancel.", mouseX + 20, mouseY - 40)
+        TooltipManager.Show("Click and drag to select the region for " . regionType . " button.`nPress Esc to cancel.", mouseX + 20, mouseY - 40)
 
         ; Use a timer to poll mouse position and state instead of OnMessage
         SetTimer(ObjBindMethod(this, "MouseCheck"), 10)
@@ -251,7 +251,7 @@ class RegionHandler {
             SetTimer(ObjBindMethod(this, "MouseCheck"), 0)
 
             ; Clear any tooltips using the global function
-            ClearTooltips()
+            TooltipManager.ClearTooltip()
 
             ; 1. Teleport mouse back to its initial position
             MouseMove(this.initialMouseX, this.initialMouseY, 0)
@@ -273,7 +273,7 @@ class RegionHandler {
             this.HidePreviousRegionOverlay()
 
             ; Show cancellation message as tooltip
-            TransparentToolTip("Selection cancelled", this.initialMouseX + 20, this.initialMouseY - 40)
+            TooltipManager.Show("Selection cancelled", this.initialMouseX + 20, this.initialMouseY - 40)
 
             ; Restore always-visible overlay if enabled
             global isRegionAlwaysVisible
@@ -314,15 +314,15 @@ class RegionHandler {
                     . "Width: " Abs(this.X2 - this.X1) ", Height: " Abs(this.Y2 - this.Y1) "`n"
                     . "DPI Scale: " this.DPIScale "`n"
                     . "isMouseDown: " isMouseDown
-                TransparentToolTip(tooltipText, mouseX + 20, mouseY - 40)
+                TooltipManager.Show(tooltipText, mouseX + 20, mouseY - 40)
             } else if (!isMouseDown) {
                 ; Show instruction tooltip when not yet dragging
-                TransparentToolTip("Click and drag to select the region for " . this.CurrentRegionType . " button.`nPress Esc to cancel.", mouseX + 20, mouseY - 40)
+                TooltipManager.Show("Click and drag to select the region for " . this.CurrentRegionType . " button.`nPress Esc to cancel.", mouseX + 20, mouseY - 40)
             } else {
                 ; Show current dimensions while dragging
                 width := Abs(this.X2 - this.X1)
                 height := Abs(this.Y2 - this.Y1)
-                TransparentToolTip("Selection: Width=" width ", Height=" height, mouseX + 20, mouseY - 40)
+                TooltipManager.Show("Selection: Width=" width ", Height=" height, mouseX + 20, mouseY - 40)
             }
         }
 
@@ -398,7 +398,7 @@ class RegionHandler {
             this.HidePreviousRegionOverlay()
 
             ; Clear tooltip when selection is complete
-            ClearTooltips()
+            TooltipManager.ClearTooltip()
 
             ; Store region based on type - check minimum size
             if (this.CurrentRegionType = "skip" && width > 10 && height > 10) {
@@ -413,7 +413,7 @@ class RegionHandler {
                 UpdateSetting("skipRegionActive", true)
 
                 ; Show completion message as tooltip instead of MsgBox
-                TransparentToolTip("Skip button region selected!`nSize: " width "x" height, this.initialMouseX + 20, this.initialMouseY - 40)
+                TooltipManager.Show("Skip button region selected!`nSize: " width "x" height, this.initialMouseX + 20, this.initialMouseY - 40)
 
                 ; Show region overlay if always-visible is enabled
                 global isRegionAlwaysVisible
@@ -422,7 +422,7 @@ class RegionHandler {
                 }
             } else if (width <= 10 || height <= 10) {
                 ; Region is too small - show message as tooltip instead of MsgBox
-                TransparentToolTip("Region is too small! Please try again with a larger selection.", this.initialMouseX + 20, this.initialMouseY - 40)
+                TooltipManager.Show("Region is too small! Please try again with a larger selection.", this.initialMouseX + 20, this.initialMouseY - 40)
 
                 ; Restore always-visible overlay if enabled
                 global isRegionAlwaysVisible
@@ -437,12 +437,12 @@ class RegionHandler {
     static ToggleDebugTooltips() {
         this.ShowDebugTooltips := !this.ShowDebugTooltips
         if (!this.ShowDebugTooltips) {
-            ClearTooltips()
+            TooltipManager.ClearTooltip()
         }
 
         ; Show status as tooltip instead of MsgBox
         MouseGetPos(&mouseX, &mouseY)
-        TransparentToolTip("Debug tooltips " . (this.ShowDebugTooltips ? "enabled" : "disabled"), mouseX + 20, mouseY - 40)
+        TooltipManager.Show("Debug tooltips " . (this.ShowDebugTooltips ? "enabled" : "disabled"), mouseX + 20, mouseY - 40)
     }
 
     ; Check if mouse is within the defined skip region

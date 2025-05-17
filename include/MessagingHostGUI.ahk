@@ -700,10 +700,5 @@ class MessagingHostGUI {
         isEnabled := this.option2Cb.Value
         UpdateSetting("showTooltipHints", isEnabled)
         Log("Tooltip hints " . (isEnabled ? "enabled" : "disabled"))
-
-        ; Clear any active tooltips when disabling
-        if (!isEnabled) {
-            ClearTooltips()
-        }
     }
 }

@@ -18,6 +18,7 @@
 #Include include/MessageProcessor.ahk
 #Include include/Utilities.ahk
 #Include include/ClickState.ahk
+#Include include/TooltipManager.ahk
 #Include include/Hotkeys.ahk
 #Include include/Settings.ahk
 
@@ -93,6 +94,10 @@ Main() {
     
     showRegionText := settingsManager.Get("showRegionText")
     showTooltipHints := settingsManager.Get("showTooltipHints")
+
+    ; Initialize TooltipManager with tooltip setting
+    Log("Initializing TooltipManager...")
+    TooltipManager.Initialize(showTooltipHints)
 
     Log("Settings loaded: Double-click settings: Skip=" . isSkipDoubleClicked)
     Log("Region always visible: " . isRegionAlwaysVisible)
@@ -232,7 +237,9 @@ UpdateSetting(key, value) {
             if (isRegionAlwaysVisible && RegionHandler.skipRegion.active)
                 RegionHandler.UpdateRegionColor(value)
         case "showRegionText": showRegionText := value
-        case "showTooltipHints": showTooltipHints := value
+        case "showTooltipHints": 
+            showTooltipHints := value
+            TooltipManager.SetTooltipsEnabled(value)
         case "skipRegionLeft", "skipRegionTop", "skipRegionRight", "skipRegionBottom", "skipRegionActive":
             ; If any region property is updated, refresh the RegionHandler
             RegionHandler.LoadFromSettings()
